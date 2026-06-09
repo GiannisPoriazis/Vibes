@@ -36,6 +36,9 @@ ScaffoldingReadMe.txt
 # NuGet Symbol Packages
 *.snupkg
 
+# IDE
+.vs/
+
 # dotenv environment variables file
 .env
 
