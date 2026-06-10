@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-using Vibes.Design;
+﻿using Vibes.Design;
+using Vibes.Interfaces;
 
 namespace Vibes.Views
 {
@@ -13,23 +7,16 @@ namespace Vibes.Views
     {
         public event EventHandler<UserInfoEventArgs>? SignedIn;
         private bool _btnHover = false;
+        private readonly IAuth0Service? _authService;
 
         public LoginControl()
         {
             InitializeComponent();
         }
 
-        private Color GetEffectiveParentBackColor(Control c)
+        public LoginControl(IAuth0Service? authService) : this()
         {
-            Control? cur = c.Parent;
-            while (cur != null)
-            {
-                // If the parent has a non-default BackColor or is not Transparent, use it
-                if (cur.BackColor != Color.Transparent)
-                    return cur.BackColor;
-                cur = cur.Parent;
-            }
-            return this.BackColor;
+            _authService = authService;
         }
 
         private void BtnLogin_Paint(object? sender, PaintEventArgs e)
@@ -105,6 +92,30 @@ namespace Vibes.Views
 
         private async void BtnLogin_Click(object? sender, EventArgs e)
         {
+            try
+            {
+                if (_authService is null)
+                {
+                    return;
+                }
+
+                var loginResult = await _authService.LoginAsync();
+
+                if (loginResult?.IsError == true)
+                {
+                    return;
+                }
+
+                var userName = loginResult?.User?.FindFirst("name")?.Value
+                               ?? loginResult?.User?.Identity?.Name
+                               ?? string.Empty;
+
+                SignedIn?.Invoke(this, new UserInfoEventArgs { Username = userName });
+            }
+            catch
+            {
+                return;
+            }
 
         }
 

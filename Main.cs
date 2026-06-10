@@ -7,9 +7,16 @@ namespace Vibes
 {
     public partial class Vibes : Form
     {
+        private readonly Interfaces.IAuth0Service? _authService;
+
         public Vibes()
         {
             InitializeComponent();
+        }
+
+        public Vibes(Interfaces.IAuth0Service? authService) : this()
+        {
+            _authService = authService;
         }
 
         private void UpdateMainGridRegion()
@@ -19,7 +26,7 @@ namespace Vibes
             if (r.Width <= 0 || r.Height <= 0) return;
 
             int d = _cornerRadius * 2;
-            using var path = new System.Drawing.Drawing2D.GraphicsPath();
+            using var path = new GraphicsPath();
             path.AddArc(r.X, r.Y, d, d, 180, 90);
             path.AddLine(r.X + _cornerRadius, r.Y, r.Right - _cornerRadius, r.Y);
             path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
@@ -109,7 +116,7 @@ namespace Vibes
         private void ShowLogin()
         {
             ClearCurrentContent();
-            var login = new LoginControl { Dock = DockStyle.Fill };
+            var login = _authService is null ? new LoginControl { Dock = DockStyle.Fill } : new LoginControl(_authService) { Dock = DockStyle.Fill };
             login.SignedIn += Login_SignedIn;
             // add to mainGrid center cell (column 1, row 1)
             mainGrid.Controls.Add(login, 1, 1);
