@@ -1,6 +1,9 @@
 using FontAwesome.Sharp;
+using Microsoft.Extensions.Logging;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using Vibes.Design;
+using Vibes.Services;
 using Vibes.Views;
 
 namespace Vibes
@@ -8,15 +11,35 @@ namespace Vibes
     public partial class Vibes : Form
     {
         private readonly Interfaces.IAuth0Service? _authService;
+        private ContextMenuStrip? _avatarMenu;
+        private readonly ILogger<Auth0Service>? _logger;
+        private static readonly HttpClient _httpClient = new HttpClient();
 
         public Vibes()
         {
             InitializeComponent();
+            UpdateAvatarRegion();
+
+            if (avatarMenu != null)
+            {
+                var roundedRenderer = new RoundedToolStripRenderer(_cornerRadius);
+                avatarMenu.Renderer = roundedRenderer;
+                avatarMenu.RenderMode = ToolStripRenderMode.Professional;
+                ToolStripManager.Renderer = roundedRenderer;
+                avatarMenu.BackColor = ColorPalette.CardBackground;
+                avatarMenu.ForeColor = ColorPalette.TextMain;
+                avatarMenu.ShowImageMargin = false;
+                avatarMenu.Opened += AvatarMenu_Opened;
+            }
+            
+            _avatarMenu = avatarMenu;
+            userAvatar.MouseUp += UserAvatar_MouseUp;
         }
 
-        public Vibes(Interfaces.IAuth0Service? authService) : this()
+        public Vibes(Interfaces.IAuth0Service? authService, ILogger<Auth0Service>? logger) : this()
         {
             _authService = authService;
+            _logger = logger;
         }
 
         private void UpdateMainGridRegion()
@@ -40,14 +63,10 @@ namespace Vibes
             mainGrid.Region = new Region(path);
         }
 
-        // corner radius used by region and border drawing
         private int _cornerRadius = 4;
-        // whether user is signed in
         private bool _isSignedIn = false;
-        // currently hosted content control in the mainGrid center cell
         private Control? _currentContent;
 
-        // Apply rounded corners using a Region built from a GraphicsPath
         private void SetRoundedRegion(int radius)
         {
             if (ClientSize.Width <= 0 || ClientSize.Height <= 0)
@@ -74,33 +93,28 @@ namespace Vibes
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            // If maximized, remove rounded clipping and border so the window fills screen corners
             if (WindowState == FormWindowState.Maximized)
             {
-                // remove form region (restore square corners)
                 if (Region != null)
                 {
                     Region.Dispose();
                     Region = null;
                 }
 
-                // remove child clipping so content fills
                 if (mainGrid?.Region != null)
                 {
                     mainGrid.Region.Dispose();
                     mainGrid.Region = null;
                 }
 
-                // remove padding so painted border (if any) is not visible
                 pageContainer.Padding = new Padding(0);
                 Invalidate();
                 return;
             }
 
-            // normal (restored) window: re-apply rounded region and child clipping
             SetRoundedRegion(_cornerRadius);
             UpdateMainGridRegion();
-            // leave a 1px gap for the custom border
+            UpdateAvatarRegion();
             pageContainer.Padding = new Padding(1);
             Invalidate();
         }
@@ -113,17 +127,7 @@ namespace Vibes
                 ShowLogin();
         }
 
-        private void ShowLogin()
-        {
-            ClearCurrentContent();
-            var login = _authService is null ? new LoginControl { Dock = DockStyle.Fill } : new LoginControl(_authService) { Dock = DockStyle.Fill };
-            login.SignedIn += Login_SignedIn;
-            // add to mainGrid center cell (column 1, row 1)
-            mainGrid.Controls.Add(login, 1, 1);
-            _currentContent = login;
-        }
-
-        private void Login_SignedIn(object? sender, LoginControl.UserInfoEventArgs e)
+        private void Login_SignedIn(object? sender, EventArgs e)
         {
             if (sender is LoginControl login)
                 login.SignedIn -= Login_SignedIn;
@@ -132,14 +136,94 @@ namespace Vibes
             ShowAppContent();
         }
 
+        private void InitializeHeader_Event(object? sender, EventArgs e)
+        {
+            if (sender is Interfaces.IAuth0Service auth)
+            {
+                if (!String.IsNullOrEmpty(auth.CurrentUser?.Picture))
+                {
+                    _ = LoadAvatarIntoAsync(userAvatar, auth.CurrentUser.Picture);
+                    userAvatar.Visible = true;
+                }
+                else
+                {
+                    userAvatar.Image = null;
+                    userAvatar.Visible = false;
+                }
+            }
+        }
+
+        private async Task LoadAvatarIntoAsync(PictureBox pictureBox, string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                if (pictureBox.InvokeRequired)
+                {
+                    pictureBox.Invoke(() => { pictureBox.Image?.Dispose(); pictureBox.Image = null; });
+                }
+                else
+                {
+                    pictureBox.Image?.Dispose();
+                    pictureBox.Image = null;
+                }
+                return;
+            }
+
+            try
+            {
+                using var resp = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                resp.EnsureSuccessStatusCode();
+                using var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                using var img = Image.FromStream(stream);
+                var bmp = new Bitmap(img);
+
+                if (pictureBox.InvokeRequired)
+                {
+                    pictureBox.Invoke(() =>
+                    {
+                        pictureBox.Image?.Dispose();
+                        pictureBox.Image = bmp;
+                        UpdateAvatarRegion();
+                    });
+                }
+                else
+                {
+                    pictureBox.Image?.Dispose();
+                    pictureBox.Image = bmp;
+                    UpdateAvatarRegion();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning("Failed to load avatar image from {Url}: {Message}", url, ex.Message);
+                if (pictureBox.InvokeRequired)
+                {
+                    pictureBox.Invoke(() => { pictureBox.Image?.Dispose(); pictureBox.Image = null; });
+                }
+                else
+                {
+                    pictureBox.Image?.Dispose();
+                    pictureBox.Image = null;
+                }
+            }
+        }
+
+        private void ShowLogin()
+        {
+            ClearCurrentContent();
+            var login = _authService is null ? new LoginControl { Dock = DockStyle.Fill } : new LoginControl(_authService) { Dock = DockStyle.Fill };
+            login.SignedIn += Login_SignedIn;
+            mainGrid.Controls.Add(login, 1, 1);
+            _currentContent = login;
+            _authService?.UserChanged += InitializeHeader_Event;
+        }
+
         private void ShowAppContent()
         {
             ClearCurrentContent();
-            var appPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(20, 20, 20) };
-            var lbl = new Label { Text = "App Content", ForeColor = Color.White, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
-            appPanel.Controls.Add(lbl);
-            mainGrid.Controls.Add(appPanel, 1, 1);
-            _currentContent = appPanel;
+            var app = new ApplicationControl { Dock = DockStyle.Fill };
+            mainGrid.Controls.Add(app, 1, 1);
+            _currentContent = app;
         }
 
         private void ClearCurrentContent()
@@ -158,10 +242,8 @@ namespace Vibes
             var rect = ctl.ClientRectangle;
             if (rect.Width <= 0 || rect.Height <= 0) return;
 
-            // When maximized we don't draw rounded borders
             if (WindowState == FormWindowState.Maximized)
             {
-                // Ensure no special clipping on children
                 if (mainGrid?.Region != null)
                 {
                     mainGrid.Region.Dispose();
@@ -170,15 +252,14 @@ namespace Vibes
                 return;
             }
 
-            // update child clipping so corners don't cover the rounded border
             UpdateMainGridRegion();
 
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             int w = rect.Width - 1;
             int h = rect.Height - 1;
             int d = _cornerRadius * 2;
 
-            using var path = new System.Drawing.Drawing2D.GraphicsPath();
+            using var path = new GraphicsPath();
             path.AddArc(rect.X, rect.Y, d, d, 180, 90);
             path.AddLine(rect.X + _cornerRadius, rect.Y, rect.X + w - _cornerRadius, rect.Y);
             path.AddArc(rect.X + w - d, rect.Y, d, d, 270, 90);
@@ -192,7 +273,6 @@ namespace Vibes
             e.Graphics.DrawPath(pen, path);
         }
 
-        // --- Dragging Logic Variables ---
         private bool _dragging = false;
         private Point _startPoint = new Point(0, 0);
 
@@ -209,7 +289,6 @@ namespace Vibes
         {
             if (_dragging)
             {
-                // Calculate the movement relative to the screen screen coordinates
                 Point p = PointToScreen(e.Location);
                 this.Location = new Point(p.X - _startPoint.X, p.Y - _startPoint.Y);
             }
@@ -218,6 +297,128 @@ namespace Vibes
         private void Logo_MouseUp(object sender, MouseEventArgs e)
         {
             _dragging = false;
+        }
+
+        private void UpdateAvatarRegion()
+        {
+            if (userAvatar == null) return;
+            try
+            {
+                var r = userAvatar.ClientRectangle;
+                int diameter = Math.Min(r.Width, r.Height);
+                using var path = new GraphicsPath();
+                path.AddEllipse((r.Width - diameter) / 2, (r.Height - diameter) / 2, diameter, diameter);
+
+                userAvatar.Region?.Dispose();
+                userAvatar.Region = new Region(path);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning("Failed to update avatar region: {Message}", ex.Message);
+            }
+        }
+
+        private void UserAvatar_MouseUp(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left) return;
+
+            if (userAvatar == null || userAvatar.Image == null) return;
+
+            var menu = avatarMenu ?? _avatarMenu ?? userAvatar.ContextMenuStrip;
+            if (menu == null) return;
+
+            int marginY = 5;
+
+            try
+            {
+                var anchor = new Point(userAvatar.Width, userAvatar.Height + marginY);
+                menu.Show(userAvatar, anchor, ToolStripDropDownDirection.Left);
+            }
+            catch
+            {
+                var pref = menu.GetPreferredSize(Size.Empty);
+                if (pref.Width <= 0) pref = menu.Size;
+                int offsetX = userAvatar.Width - pref.Width;
+                var desired = userAvatar.PointToScreen(new Point(offsetX, userAvatar.Height + marginY));
+                var wa = Screen.GetWorkingArea(this);
+
+                if (desired.X < wa.Left) desired.X = wa.Left;
+                if (desired.X + pref.Width > wa.Right) desired.X = Math.Max(wa.Left, wa.Right - pref.Width);
+                if (desired.Y + pref.Height > wa.Bottom) desired.Y = Math.Max(wa.Top, wa.Bottom - pref.Height);
+
+                try { menu.Show(desired); }
+                catch { menu.Show(userAvatar, new Point(0, userAvatar.Height + marginY)); }
+            }
+        }
+
+        private void AvatarMenu_Account_Click(object? sender, EventArgs e)
+        {
+            var account = new AccountControl { Dock = DockStyle.Fill };
+            if (_currentContent is ApplicationControl appControl)
+            {
+                appControl.applicationLayout.Controls.Add(account, 1, 0);
+            }
+            else
+            {
+                _logger?.LogWarning("Cannot open account details: current content is not ApplicationControl");
+            }
+        }
+
+        private void AvatarMenu_Opened(object? sender, EventArgs e)
+        {
+            if (sender is ContextMenuStrip cms)
+            {
+                var rect = new Rectangle(Point.Empty, cms.Size);
+                using var path = MakeRoundedPath(rect, 4);
+                cms.Region?.Dispose();
+                cms.Region = new Region(path);
+            }
+            else if (sender is ToolStripDropDownMenu dmenu)
+            {
+                var rect = new Rectangle(Point.Empty, dmenu.Size);
+                using var path = MakeRoundedPath(rect, 4);
+                dmenu.Region?.Dispose();
+                dmenu.Region = new Region(path);
+            }
+        }
+
+        private static GraphicsPath MakeRoundedPath(Rectangle rect, int radius)
+        {
+            var path = new GraphicsPath();
+            int d = radius * 2;
+            if (d <= 0)
+            {
+                path.AddRectangle(rect);
+                return path;
+            }
+            rect.Inflate(-1, -1);
+            path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        private async void AvatarMenu_Logout_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (_authService != null)
+                {
+                    var logoutResult = await _authService.LogoutAsync();
+
+                    if (!logoutResult.IsError)
+                    {
+                        _isSignedIn = false;
+                        ShowLogin();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError("Logout failed: {Message}", ex.Message);
+            }
         }
 
         private void MinimizeButton_Click(object sender, EventArgs e)

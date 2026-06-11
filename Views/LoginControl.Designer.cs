@@ -111,7 +111,6 @@ namespace Vibes.Views
             Name = "LoginControl";
             Padding = new Padding(16);
             Size = new Size(577, 412);
-            Load += LoginControl_Load;
             formLayout.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)logoFull).EndInit();
             pageLayout.ResumeLayout(false);

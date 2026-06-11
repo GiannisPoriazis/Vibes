@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Vibes.Properties {
+namespace Properties {
     using System;
     
     

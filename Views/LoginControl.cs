@@ -5,7 +5,7 @@ namespace Vibes.Views
 {
     public partial class LoginControl : UserControl
     {
-        public event EventHandler<UserInfoEventArgs>? SignedIn;
+        public event EventHandler? SignedIn;
         private bool _btnHover = false;
         private readonly IAuth0Service? _authService;
 
@@ -27,14 +27,12 @@ namespace Vibes.Views
             var rect = btn.ClientRectangle;
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            // Clear control background with parent's background to avoid white corners
             var parentBack = btn.Parent?.BackColor ?? this.BackColor;
             using (var bgBrush = new SolidBrush(parentBack))
             {
                 e.Graphics.FillRectangle(bgBrush, rect);
             }
 
-            // Draw gradient pill slightly inset so edges are clean
             int inset = 2;
             var pillRect = Rectangle.Inflate(rect, -inset, -inset);
             using var path = new System.Drawing.Drawing2D.GraphicsPath();
@@ -45,7 +43,6 @@ namespace Vibes.Views
             path.AddArc(pillRect.X, pillRect.Bottom - radius, radius, radius, 90, 90);
             path.CloseFigure();
 
-            // Gradient colors
             Color left = ColorPalette.AccentPurple;
             Color right = ColorPalette.AccentPink;
 
@@ -58,14 +55,12 @@ namespace Vibes.Views
             using var brush = new System.Drawing.Drawing2D.LinearGradientBrush(pillRect, left, right, 0f);
             e.Graphics.FillPath(brush, path);
 
-            // Draw subtle 1px stroke around the pill to increase contrast
             using (var outlinePen = new Pen(Color.FromArgb(140, 0, 0, 0), 1f))
             {
                 outlinePen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 e.Graphics.DrawPath(outlinePen, path);
             }
 
-            // Draw text centered
             var textRect = pillRect;
             TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, textRect, btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
         }
@@ -106,26 +101,12 @@ namespace Vibes.Views
                     return;
                 }
 
-                var userName = loginResult?.User?.FindFirst("name")?.Value
-                               ?? loginResult?.User?.Identity?.Name
-                               ?? string.Empty;
-
-                SignedIn?.Invoke(this, new UserInfoEventArgs { Username = userName });
+                SignedIn?.Invoke(this, EventArgs.Empty);
             }
             catch
             {
                 return;
             }
-
-        }
-
-        public class UserInfoEventArgs : EventArgs
-        {
-            public string Username { get; set; } = string.Empty;
-        }
-
-        private void LoginControl_Load(object sender, EventArgs e)
-        {
 
         }
     }

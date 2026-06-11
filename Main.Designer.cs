@@ -1,4 +1,5 @@
 ﻿using FontAwesome.Sharp;
+using Vibes.Design;
 
 namespace Vibes
 {
@@ -30,6 +31,11 @@ namespace Vibes
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Vibes));
+            avatarMenu = new ContextMenuStrip(components);
+            accountToolStripMenuItem = new ToolStripMenuItem();
+            logoutToolStripMenuItem = new ToolStripMenuItem();
             mainGrid = new TableLayoutPanel();
             titleBar = new Panel();
             titleBarLayout = new TableLayoutPanel();
@@ -38,15 +44,46 @@ namespace Vibes
             enlargeButton = new IconButton();
             exitButton = new IconButton();
             logoIcon = new PictureBox();
+            userAvatar = new PictureBox();
             copyrightLabel = new Label();
             pageContainer = new TableLayoutPanel();
+            avatarMenu.SuspendLayout();
             mainGrid.SuspendLayout();
             titleBar.SuspendLayout();
             titleBarLayout.SuspendLayout();
             windowActions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)logoIcon).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)userAvatar).BeginInit();
             pageContainer.SuspendLayout();
             SuspendLayout();
+            // 
+            // avatarMenu
+            // 
+            avatarMenu.BackColor = Color.FromArgb(30, 30, 40);
+            avatarMenu.Items.AddRange(new ToolStripItem[] { accountToolStripMenuItem, logoutToolStripMenuItem });
+            avatarMenu.Name = "avatarMenu";
+            avatarMenu.Size = new Size(126, 84);
+            // 
+            // accountToolStripMenuItem
+            // 
+            accountToolStripMenuItem.AutoSize = false;
+            accountToolStripMenuItem.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            accountToolStripMenuItem.ForeColor = Color.White;
+            accountToolStripMenuItem.Name = "accountToolStripMenuItem";
+            accountToolStripMenuItem.Padding = new Padding(0);
+            accountToolStripMenuItem.Size = new Size(120, 40);
+            accountToolStripMenuItem.Text = "Account";
+            accountToolStripMenuItem.Click += AvatarMenu_Account_Click;
+            // 
+            // logoutToolStripMenuItem
+            // 
+            logoutToolStripMenuItem.AutoSize = false;
+            logoutToolStripMenuItem.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            logoutToolStripMenuItem.ForeColor = Color.White;
+            logoutToolStripMenuItem.Name = "logoutToolStripMenuItem";
+            logoutToolStripMenuItem.Size = new Size(120, 40);
+            logoutToolStripMenuItem.Text = "Log out";
+            logoutToolStripMenuItem.Click += AvatarMenu_Logout_Click;
             // 
             // mainGrid
             // 
@@ -55,6 +92,7 @@ namespace Vibes
             mainGrid.Controls.Add(titleBar, 0, 0);
             mainGrid.Controls.Add(copyrightLabel, 1, 2);
             mainGrid.Dock = DockStyle.Fill;
+            mainGrid.Location = new Point(1, 1);
             mainGrid.Margin = new Padding(0);
             mainGrid.Name = "mainGrid";
             mainGrid.RowCount = 3;
@@ -78,11 +116,13 @@ namespace Vibes
             // 
             // titleBarLayout
             // 
-            titleBarLayout.ColumnCount = 2;
+            titleBarLayout.ColumnCount = 3;
+            titleBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
             titleBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             titleBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
-            titleBarLayout.Controls.Add(windowActions, 1, 0);
+            titleBarLayout.Controls.Add(windowActions, 2, 0);
             titleBarLayout.Controls.Add(logoIcon, 0, 0);
+            titleBarLayout.Controls.Add(userAvatar, 1, 0);
             titleBarLayout.Dock = DockStyle.Fill;
             titleBarLayout.Location = new Point(0, 0);
             titleBarLayout.Margin = new Padding(0);
@@ -187,6 +227,20 @@ namespace Vibes
             logoIcon.TabStop = false;
             logoIcon.WaitOnLoad = true;
             // 
+            // userAvatar
+            // 
+            userAvatar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            userAvatar.ContextMenuStrip = avatarMenu;
+            userAvatar.Cursor = Cursors.Hand;
+            userAvatar.Location = new Point(698, 0);
+            userAvatar.Margin = new Padding(0);
+            userAvatar.Name = "userAvatar";
+            userAvatar.Size = new Size(50, 40);
+            userAvatar.SizeMode = PictureBoxSizeMode.Zoom;
+            userAvatar.TabIndex = 2;
+            userAvatar.TabStop = false;
+            userAvatar.Visible = false;
+            // 
             // copyrightLabel
             // 
             copyrightLabel.AutoSize = true;
@@ -200,18 +254,19 @@ namespace Vibes
             copyrightLabel.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // pageContainer
+            // 
             pageContainer.ColumnCount = 1;
             pageContainer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             pageContainer.Controls.Add(mainGrid);
-            pageContainer.Padding = new Padding(1);
-            pageContainer.Paint += pageContainer_Paint;
             pageContainer.Dock = DockStyle.Fill;
             pageContainer.Location = new Point(0, 0);
             pageContainer.Name = "pageContainer";
+            pageContainer.Padding = new Padding(1);
             pageContainer.RowCount = 1;
             pageContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             pageContainer.Size = new Size(900, 600);
             pageContainer.TabIndex = 2;
+            pageContainer.Paint += pageContainer_Paint;
             // 
             // Vibes
             // 
@@ -222,16 +277,18 @@ namespace Vibes
             ControlBox = false;
             Controls.Add(pageContainer);
             FormBorderStyle = FormBorderStyle.None;
+            Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
             Name = "Vibes";
-            ShowIcon = false;
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Vibes";
+            avatarMenu.ResumeLayout(false);
             mainGrid.ResumeLayout(false);
             mainGrid.PerformLayout();
             titleBar.ResumeLayout(false);
             titleBarLayout.ResumeLayout(false);
             windowActions.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)logoIcon).EndInit();
+            ((System.ComponentModel.ISupportInitialize)userAvatar).EndInit();
             pageContainer.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -249,5 +306,10 @@ namespace Vibes
         private Label copyrightLabel;
         private Control currentControl;
         private TableLayoutPanel pageContainer;
+        private PictureBox userAvatar;
+        private ContextMenuStrip avatarMenu;
+        private ToolStripMenuItem accountToolStripMenuItem;
+        private ToolStripMenuItem logoutToolStripMenuItem;
+        private ToolStripMenuItem accountToolStripMenuItem1;
     }
 }
