@@ -59,7 +59,7 @@ namespace Vibes
             // 
             // avatarMenu
             // 
-            avatarMenu.BackColor = Color.FromArgb(30, 30, 40);
+            avatarMenu.BackColor = Color.FromArgb(240, 245, 244);
             avatarMenu.Items.AddRange(new ToolStripItem[] { accountToolStripMenuItem, logoutToolStripMenuItem });
             avatarMenu.Name = "avatarMenu";
             avatarMenu.Size = new Size(126, 84);
@@ -68,7 +68,7 @@ namespace Vibes
             // 
             accountToolStripMenuItem.AutoSize = false;
             accountToolStripMenuItem.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            accountToolStripMenuItem.ForeColor = Color.White;
+            accountToolStripMenuItem.ForeColor = Color.Black;
             accountToolStripMenuItem.Name = "accountToolStripMenuItem";
             accountToolStripMenuItem.Padding = new Padding(0);
             accountToolStripMenuItem.Size = new Size(120, 40);
@@ -79,7 +79,7 @@ namespace Vibes
             // 
             logoutToolStripMenuItem.AutoSize = false;
             logoutToolStripMenuItem.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            logoutToolStripMenuItem.ForeColor = Color.White;
+            logoutToolStripMenuItem.ForeColor = Color.Black;
             logoutToolStripMenuItem.Name = "logoutToolStripMenuItem";
             logoutToolStripMenuItem.Size = new Size(120, 40);
             logoutToolStripMenuItem.Text = "Log out";

@@ -1,6 +1,5 @@
 using FontAwesome.Sharp;
 using Microsoft.Extensions.Logging;
-using System.Drawing;
 using System.Drawing.Drawing2D;
 using Vibes.Design;
 using Vibes.Services;
@@ -11,6 +10,7 @@ namespace Vibes
     public partial class Vibes : Form
     {
         private readonly Interfaces.IAuth0Service? _authService;
+        private readonly Interfaces.IAvatarService? _avatarService;
         private ContextMenuStrip? _avatarMenu;
         private readonly ILogger<Auth0Service>? _logger;
         private static readonly HttpClient _httpClient = new HttpClient();
@@ -18,7 +18,6 @@ namespace Vibes
         public Vibes()
         {
             InitializeComponent();
-            UpdateAvatarRegion();
 
             if (avatarMenu != null)
             {
@@ -26,8 +25,6 @@ namespace Vibes
                 avatarMenu.Renderer = roundedRenderer;
                 avatarMenu.RenderMode = ToolStripRenderMode.Professional;
                 ToolStripManager.Renderer = roundedRenderer;
-                avatarMenu.BackColor = ColorPalette.CardBackground;
-                avatarMenu.ForeColor = ColorPalette.TextMain;
                 avatarMenu.ShowImageMargin = false;
                 avatarMenu.Opened += AvatarMenu_Opened;
             }
@@ -36,9 +33,10 @@ namespace Vibes
             userAvatar.MouseUp += UserAvatar_MouseUp;
         }
 
-        public Vibes(Interfaces.IAuth0Service? authService, ILogger<Auth0Service>? logger) : this()
+        public Vibes(Interfaces.IAuth0Service? authService, ILogger<Auth0Service>? logger, Interfaces.IAvatarService? avatarService) : this()
         {
             _authService = authService;
+            _avatarService = avatarService;
             _logger = logger;
         }
 
@@ -114,7 +112,7 @@ namespace Vibes
 
             SetRoundedRegion(_cornerRadius);
             UpdateMainGridRegion();
-            UpdateAvatarRegion();
+            _avatarService?.UpdateAvatarRegion(userAvatar);
             pageContainer.Padding = new Padding(1);
             Invalidate();
         }
@@ -142,7 +140,7 @@ namespace Vibes
             {
                 if (!String.IsNullOrEmpty(auth.CurrentUser?.Picture))
                 {
-                    _ = LoadAvatarIntoAsync(userAvatar, auth.CurrentUser.Picture);
+                    _ = _avatarService?.LoadAvatarIntoAsync(userAvatar, auth.CurrentUser.Picture);
                     userAvatar.Visible = true;
                 }
                 else
@@ -153,67 +151,12 @@ namespace Vibes
             }
         }
 
-        private async Task LoadAvatarIntoAsync(PictureBox pictureBox, string? url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                if (pictureBox.InvokeRequired)
-                {
-                    pictureBox.Invoke(() => { pictureBox.Image?.Dispose(); pictureBox.Image = null; });
-                }
-                else
-                {
-                    pictureBox.Image?.Dispose();
-                    pictureBox.Image = null;
-                }
-                return;
-            }
-
-            try
-            {
-                using var resp = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-                resp.EnsureSuccessStatusCode();
-                using var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using var img = Image.FromStream(stream);
-                var bmp = new Bitmap(img);
-
-                if (pictureBox.InvokeRequired)
-                {
-                    pictureBox.Invoke(() =>
-                    {
-                        pictureBox.Image?.Dispose();
-                        pictureBox.Image = bmp;
-                        UpdateAvatarRegion();
-                    });
-                }
-                else
-                {
-                    pictureBox.Image?.Dispose();
-                    pictureBox.Image = bmp;
-                    UpdateAvatarRegion();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning("Failed to load avatar image from {Url}: {Message}", url, ex.Message);
-                if (pictureBox.InvokeRequired)
-                {
-                    pictureBox.Invoke(() => { pictureBox.Image?.Dispose(); pictureBox.Image = null; });
-                }
-                else
-                {
-                    pictureBox.Image?.Dispose();
-                    pictureBox.Image = null;
-                }
-            }
-        }
-
         private void ShowLogin()
         {
             ClearCurrentContent();
             var login = _authService is null ? new LoginControl { Dock = DockStyle.Fill } : new LoginControl(_authService) { Dock = DockStyle.Fill };
             login.SignedIn += Login_SignedIn;
-            mainGrid.Controls.Add(login, 1, 1);
+            mainGrid.Controls.Add(login, 0, 1);
             _currentContent = login;
             _authService?.UserChanged += InitializeHeader_Event;
         }
@@ -221,8 +164,11 @@ namespace Vibes
         private void ShowAppContent()
         {
             ClearCurrentContent();
-            var app = new ApplicationControl { Dock = DockStyle.Fill };
-            mainGrid.Controls.Add(app, 1, 1);
+            var app = _authService is null ? new ApplicationControl { Dock = DockStyle.Fill } : new ApplicationControl(_authService) { Dock = DockStyle.Fill };
+            var audioPlayer = new AudioPlayerControl { Dock = DockStyle.Fill };
+            copyrightLabel.Enabled = false;
+            mainGrid.Controls.Add(app, 0, 1);
+            mainGrid.Controls.Add(audioPlayer, 0, 2);
             _currentContent = app;
         }
 
@@ -299,25 +245,6 @@ namespace Vibes
             _dragging = false;
         }
 
-        private void UpdateAvatarRegion()
-        {
-            if (userAvatar == null) return;
-            try
-            {
-                var r = userAvatar.ClientRectangle;
-                int diameter = Math.Min(r.Width, r.Height);
-                using var path = new GraphicsPath();
-                path.AddEllipse((r.Width - diameter) / 2, (r.Height - diameter) / 2, diameter, diameter);
-
-                userAvatar.Region?.Dispose();
-                userAvatar.Region = new Region(path);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning("Failed to update avatar region: {Message}", ex.Message);
-            }
-        }
-
         private void UserAvatar_MouseUp(object? sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return;
@@ -353,7 +280,7 @@ namespace Vibes
 
         private void AvatarMenu_Account_Click(object? sender, EventArgs e)
         {
-            var account = new AccountControl { Dock = DockStyle.Fill };
+            var account = new AccountControl(_authService, _avatarService) { Dock = DockStyle.Fill };
             if (_currentContent is ApplicationControl appControl)
             {
                 appControl.applicationLayout.Controls.Add(account, 1, 0);

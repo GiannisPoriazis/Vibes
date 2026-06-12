@@ -1,9 +1,10 @@
 ﻿using Auth0.OidcClient;
-using System.Security.Claims;
-using Vibes.Interfaces;
-using Vibes.Models;
 using Duende.IdentityModel.OidcClient.Browser;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
+using Vibes.Database;
+using Vibes.Interfaces;
+using Vibes.Models;
 
 namespace Vibes.Services
 {
@@ -56,6 +57,11 @@ namespace Vibes.Services
                 var mapped = MapFromClaims(result.User);
                 CurrentUser = mapped;
                 _logger.LogInformation("User logged in: {Username} ({Subject})", mapped.Username, mapped.Subject);
+
+                if(CurrentUser.Subject != null)
+                {
+                    DbInitializer.SeedMockDataForUser(CurrentUser.Subject);
+                }
 
                 try
                 {

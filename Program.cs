@@ -4,6 +4,7 @@ using Vibes.Interfaces;
 using Vibes.Services;
 using Serilog;
 using Microsoft.Extensions.Logging;
+using Vibes.Database;
 
 namespace Vibes
 {
@@ -62,10 +63,17 @@ namespace Vibes
                 services.AddSingleton<IAuth0Service>(sp => sp.GetRequiredService<Auth0Service>());
             }
 
+            services.AddSingleton<AvatarService>();
+            services.AddSingleton<IAvatarService>(sp => sp.GetRequiredService<AvatarService>());
             services.AddSingleton<Vibes>();
 
             var serviceProvider = services.BuildServiceProvider(validateScopes: true);
             var mainForm = serviceProvider.GetRequiredService<Vibes>();
+
+            using (var db = new VibesDbContext())
+            {
+                db.Database.EnsureCreated();
+            }
 
             Application.ApplicationExit += (s, e) => {
                 try { Log.CloseAndFlush(); } catch { }

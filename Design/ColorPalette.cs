@@ -21,5 +21,9 @@ namespace Vibes.Design
         // Typography
         public static readonly Color TextMain = Color.FromArgb(255, 255, 255);
         public static readonly Color TextMuted = Color.FromArgb(160, 160, 175);
+
+        //ContextMenu
+        public static readonly Color ContextMenuBackground = Color.FromArgb(240, 245, 244);
+        public static readonly Color ContextMenuForeColor = Color.Black;
     }
 }
