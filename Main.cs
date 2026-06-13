@@ -154,9 +154,34 @@ namespace Vibes
         private void ShowLogin()
         {
             ClearCurrentContent();
+
+            var activeAudioPlayer = mainGrid.GetControlFromPosition(0, 2);
+            if (activeAudioPlayer != null)
+            {
+                mainGrid.Controls.Remove(activeAudioPlayer);
+                activeAudioPlayer.Dispose(); 
+            }
+
+            var activeSearchBar = headerCenterLayout.GetControlFromPosition(0, 0);
+            if (activeSearchBar != null)
+            {
+                headerCenterLayout.Controls.Remove(activeSearchBar);
+                activeSearchBar.Dispose();
+            }
+
+            if (!mainGrid.Controls.Contains(copyrightLabel))
+            {
+                mainGrid.Controls.Add(copyrightLabel, 0, 2);
+            }
+
+            copyrightLabel.Text = $"Vibes © {DateTime.Now.Year} | All Rights Reserved.";
+            copyrightLabel.Visible = true;
+            copyrightLabel.Enabled = true;
+
             var login = _authService is null ? new LoginControl { Dock = DockStyle.Fill } : new LoginControl(_authService) { Dock = DockStyle.Fill };
             login.SignedIn += Login_SignedIn;
             mainGrid.Controls.Add(login, 0, 1);
+
             _currentContent = login;
             _authService?.UserChanged += InitializeHeader_Event;
         }
@@ -164,11 +189,17 @@ namespace Vibes
         private void ShowAppContent()
         {
             ClearCurrentContent();
+
+            mainGrid.Controls.Remove(copyrightLabel);
+
             var app = _authService is null ? new ApplicationControl { Dock = DockStyle.Fill } : new ApplicationControl(_authService) { Dock = DockStyle.Fill };
             var audioPlayer = new AudioPlayerControl { Dock = DockStyle.Fill };
-            copyrightLabel.Enabled = false;
+            var searchBar = new SearchBarControl(audioPlayer) { Dock = DockStyle.Fill };
+
             mainGrid.Controls.Add(app, 0, 1);
-            mainGrid.Controls.Add(audioPlayer, 0, 2);
+            mainGrid.Controls.Add(audioPlayer, 0, 2); 
+
+            headerCenterLayout.Controls.Add(searchBar, 0, 0);
             _currentContent = app;
         }
 

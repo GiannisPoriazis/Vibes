@@ -44,6 +44,7 @@ namespace Vibes
             enlargeButton = new IconButton();
             exitButton = new IconButton();
             logoIcon = new PictureBox();
+            headerCenterLayout = new TableLayoutPanel();
             userAvatar = new PictureBox();
             copyrightLabel = new Label();
             pageContainer = new TableLayoutPanel();
@@ -53,6 +54,7 @@ namespace Vibes
             titleBarLayout.SuspendLayout();
             windowActions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)logoIcon).BeginInit();
+            headerCenterLayout.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)userAvatar).BeginInit();
             pageContainer.SuspendLayout();
             SuspendLayout();
@@ -90,7 +92,6 @@ namespace Vibes
             mainGrid.ColumnCount = 1;
             mainGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20F));
             mainGrid.Controls.Add(titleBar, 0, 0);
-            mainGrid.Controls.Add(copyrightLabel, 1, 2);
             mainGrid.Dock = DockStyle.Fill;
             mainGrid.Location = new Point(1, 1);
             mainGrid.Margin = new Padding(0);
@@ -122,7 +123,7 @@ namespace Vibes
             titleBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
             titleBarLayout.Controls.Add(windowActions, 2, 0);
             titleBarLayout.Controls.Add(logoIcon, 0, 0);
-            titleBarLayout.Controls.Add(userAvatar, 1, 0);
+            titleBarLayout.Controls.Add(headerCenterLayout, 1, 0);
             titleBarLayout.Dock = DockStyle.Fill;
             titleBarLayout.Location = new Point(0, 0);
             titleBarLayout.Margin = new Padding(0);
@@ -227,15 +228,29 @@ namespace Vibes
             logoIcon.TabStop = false;
             logoIcon.WaitOnLoad = true;
             // 
+            // headerCenterLayout
+            // 
+            headerCenterLayout.ColumnCount = 2;
+            headerCenterLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            headerCenterLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
+            headerCenterLayout.Controls.Add(userAvatar, 1, 0);
+            headerCenterLayout.Dock = DockStyle.Fill;
+            headerCenterLayout.Location = new Point(53, 3);
+            headerCenterLayout.Name = "headerCenterLayout";
+            headerCenterLayout.RowCount = 1;
+            headerCenterLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            headerCenterLayout.Size = new Size(692, 34);
+            headerCenterLayout.TabIndex = 2;
+            // 
             // userAvatar
             // 
             userAvatar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             userAvatar.ContextMenuStrip = avatarMenu;
             userAvatar.Cursor = Cursors.Hand;
-            userAvatar.Location = new Point(698, 0);
+            userAvatar.Location = new Point(642, 0);
             userAvatar.Margin = new Padding(0);
             userAvatar.Name = "userAvatar";
-            userAvatar.Size = new Size(50, 40);
+            userAvatar.Size = new Size(50, 34);
             userAvatar.SizeMode = PictureBoxSizeMode.Zoom;
             userAvatar.TabIndex = 2;
             userAvatar.TabStop = false;
@@ -250,7 +265,6 @@ namespace Vibes
             copyrightLabel.Name = "copyrightLabel";
             copyrightLabel.Size = new Size(892, 50);
             copyrightLabel.TabIndex = 1;
-            copyrightLabel.Text = "Vibes © 2026 | All Rights Reserved.";
             copyrightLabel.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // pageContainer
@@ -283,11 +297,11 @@ namespace Vibes
             Text = "Vibes";
             avatarMenu.ResumeLayout(false);
             mainGrid.ResumeLayout(false);
-            mainGrid.PerformLayout();
             titleBar.ResumeLayout(false);
             titleBarLayout.ResumeLayout(false);
             windowActions.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)logoIcon).EndInit();
+            headerCenterLayout.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)userAvatar).EndInit();
             pageContainer.ResumeLayout(false);
             ResumeLayout(false);
@@ -311,5 +325,6 @@ namespace Vibes
         private ToolStripMenuItem accountToolStripMenuItem;
         private ToolStripMenuItem logoutToolStripMenuItem;
         private ToolStripMenuItem accountToolStripMenuItem1;
+        private TableLayoutPanel headerCenterLayout;
     }
 }

@@ -6,6 +6,6 @@ namespace Vibes.Interfaces
 {
     internal interface IAudioStreamingService
     {
-        Task<List<TrackSearchResult>> SearchOnlineTracksAsync(string query);
+        Task<List<TrackSearchResult>> SearchTracksAsync(string query);
     }
 }
