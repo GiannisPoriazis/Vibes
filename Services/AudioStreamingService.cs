@@ -1,48 +1,128 @@
-﻿using System.Text.Json;
+﻿using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using Vibes;
 using Vibes.Interfaces;
+using Vibes.Models;
 
-public class AudioStreamingService: IAudioStreamingService
+public class AudioStreamingService : IAudioStreamingService
 {
     private static readonly HttpClient _client = new HttpClient();
     private readonly string _apiClientId;
+    private readonly ILogger<AudioStreamingService> _logger;
 
-    public AudioStreamingService()
+    public AudioStreamingService(ILogger<AudioStreamingService> logger)
     {
         _apiClientId = AppConfig.Get("Jamendo:ClientId") ?? throw new InvalidOperationException("Jamendo:ClientId needs to be set in appsettings.json");
+        _logger = logger;
     }
 
-    public async Task<List<TrackSearchResult>> SearchTracksAsync(string query)
+    public async Task<List<Track>> SearchTracksAsync(string query)
     {
-        string url = $"https://api.jamendo.com/v3.0/tracks/?client_id={_apiClientId}&format=json&search={Uri.EscapeDataString(query)}&limit=10";
+        if (string.IsNullOrWhiteSpace(query)) return new List<Track>();
 
-        var response = await _client.GetStringAsync(url);
-        using var doc = JsonDocument.Parse(response);
-        var root = doc.RootElement.GetProperty("results");
+        string url = $"https://api.jamendo.com/v3.0/tracks/?client_id={_apiClientId}&format=json&search={Uri.EscapeDataString(query.Trim())}&limit=10&include=musicinfo";
 
-        var results = new List<TrackSearchResult>();
-        foreach (var item in root.EnumerateArray())
+        try
         {
-            results.Add(new TrackSearchResult
-            {
-                Title = item.GetProperty("name").GetString() ?? "",
-                Artist = item.GetProperty("artist_name").GetString() ?? "",
-                CoverUrl = item.GetProperty("image").GetString() ?? "",
-                StreamUrl = item.GetProperty("audio").GetString() ?? "", 
-                Duration = item.GetProperty("duration").GetInt32().ToString()
-            });
-        }
-        return results;
-    }
-}
+            var response = await _client.GetStringAsync(url);
+            using var doc = JsonDocument.Parse(response);
+            
+            if (!doc.RootElement.TryGetProperty("results", out var root))
+                return new List<Track>();
 
-public class TrackSearchResult
-{
-    public string Title { get; set; } = string.Empty;
-    public string Artist { get; set; } = string.Empty;
-    public string Type { get; set; } = "Song"; 
-    public string CoverUrl { get; set; } = string.Empty;
-    public string StreamUrl { get; set; } = string.Empty;
-    public string Duration { get; set; } = string.Empty;
-    public Bitmap? CachedCover { get; set; }
+            var results = new List<Track>();
+            foreach (var item in root.EnumerateArray())
+            {
+                int durationSeconds = item.GetProperty("duration").GetInt32();
+
+                bool isPodcast = false;
+                if (item.TryGetProperty("musicinfo", out var musicInfo) && 
+                    musicInfo.TryGetProperty("tags", out var tagsNode))
+                {
+                    if (tagsNode.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var tag in tagsNode.EnumerateArray())
+                        {
+                            if (tag.ValueKind == JsonValueKind.String && IsPodcastTag(tag.GetString()))
+                            {
+                                isPodcast = true;
+                                break;
+                            }
+                        }
+                    }
+                    else if (tagsNode.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var prop in tagsNode.EnumerateObject())
+                        {
+                            if (prop.Value.ValueKind == JsonValueKind.String)
+                            {
+                                if (IsPodcastTag(prop.Value.GetString()))
+                                {
+                                    isPodcast = true;
+                                    break;
+                                }
+                            }
+                            else if (prop.Value.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var subTag in prop.Value.EnumerateArray())
+                                {
+                                    if (subTag.ValueKind == JsonValueKind.String && IsPodcastTag(subTag.GetString()))
+                                    {
+                                        isPodcast = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (isPodcast) break;
+                        }
+                    }
+                }
+
+                Track trackItem;
+                if (isPodcast)
+                {
+                    trackItem = new Podcast
+                    {
+                        Type = TrackType.Podcast,
+                        Title = item.GetProperty("name").GetString() ?? "",
+                        Artist = item.GetProperty("artist_name").GetString() ?? "",
+                        CoverUrl = item.GetProperty("image").GetString() ?? "",
+                        StreamUrl = item.GetProperty("audio").GetString() ?? "",
+                        Duration = durationSeconds
+                    };
+                }
+                else
+                {
+                    trackItem = new Song
+                    {
+                        Type = TrackType.Song,
+                        Title = item.GetProperty("name").GetString() ?? "",
+                        Artist = item.GetProperty("artist_name").GetString() ?? "",
+                        CoverUrl = item.GetProperty("image").GetString() ?? "",
+                        StreamUrl = item.GetProperty("audio").GetString() ?? "",
+                        Duration = durationSeconds
+                    };
+                }
+
+                results.Add(trackItem);
+            }
+            return results;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Jamendo Fetch Error: {Message}", ex.Message);
+            return new List<Track>();
+        }
+    }
+
+    private bool IsPodcastTag(string? tagText)
+    {
+        if (string.IsNullOrWhiteSpace(tagText)) return false;
+
+        return tagText.Contains("podcast") ||
+               tagText.Contains("spokenword") ||
+               tagText.Contains("interview") ||
+               tagText.Contains("speech");
+    }
 }

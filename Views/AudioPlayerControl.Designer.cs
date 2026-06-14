@@ -93,6 +93,7 @@ namespace Vibes.Views
             previousTrackBtn.TabIndex = 0;
             previousTrackBtn.TextImageRelation = TextImageRelation.ImageAboveText;
             previousTrackBtn.UseVisualStyleBackColor = false;
+            previousTrackBtn.Click += previousTrackBtn_Click;
             // 
             // playTrackBtn
             // 
@@ -136,6 +137,7 @@ namespace Vibes.Views
             nextTrackBtn.TabIndex = 2;
             nextTrackBtn.TextImageRelation = TextImageRelation.ImageAboveText;
             nextTrackBtn.UseVisualStyleBackColor = false;
+            nextTrackBtn.Click += nextTrackBtn_Click;
             // 
             // AudioPlayerControl
             // 

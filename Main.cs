@@ -2,22 +2,37 @@ using FontAwesome.Sharp;
 using Microsoft.Extensions.Logging;
 using System.Drawing.Drawing2D;
 using Vibes.Design;
-using Vibes.Services;
+using Vibes.Interfaces;
 using Vibes.Views;
 
 namespace Vibes
 {
     public partial class Vibes : Form
     {
-        private readonly Interfaces.IAuth0Service? _authService;
-        private readonly Interfaces.IAvatarService? _avatarService;
+        private readonly IAuth0Service _authService;
+        private readonly IAvatarService _avatarService;
+        private readonly ApplicationControl _appControl;
+        private readonly AudioPlayerControl _audioPlayerControl;
+        private readonly SearchBarControl _searchBarControl;
         private ContextMenuStrip? _avatarMenu;
-        private readonly ILogger<Auth0Service>? _logger;
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private readonly ILogger<Vibes> _logger;
 
-        public Vibes()
+        public Vibes(
+            ApplicationControl appControl,
+            AudioPlayerControl audioPlayerControl,
+            SearchBarControl searchBarControl,
+            IAuth0Service authService, 
+            ILogger<Vibes> logger, 
+            IAvatarService avatarService
+         )
         {
             InitializeComponent();
+            _appControl = appControl;
+            _audioPlayerControl = audioPlayerControl;
+            _searchBarControl = searchBarControl;
+            _authService = authService;
+            _avatarService = avatarService;
+            _logger = logger;
 
             if (avatarMenu != null)
             {
@@ -31,13 +46,6 @@ namespace Vibes
             
             _avatarMenu = avatarMenu;
             userAvatar.MouseUp += UserAvatar_MouseUp;
-        }
-
-        public Vibes(Interfaces.IAuth0Service? authService, ILogger<Auth0Service>? logger, Interfaces.IAvatarService? avatarService) : this()
-        {
-            _authService = authService;
-            _avatarService = avatarService;
-            _logger = logger;
         }
 
         private void UpdateMainGridRegion()
@@ -192,15 +200,15 @@ namespace Vibes
 
             mainGrid.Controls.Remove(copyrightLabel);
 
-            var app = _authService is null ? new ApplicationControl { Dock = DockStyle.Fill } : new ApplicationControl(_authService) { Dock = DockStyle.Fill };
-            var audioPlayer = new AudioPlayerControl { Dock = DockStyle.Fill };
-            var searchBar = new SearchBarControl(audioPlayer) { Dock = DockStyle.Fill };
+            _appControl.Dock = DockStyle.Fill;
+            _audioPlayerControl.Dock = DockStyle.Fill;
+            _searchBarControl.Dock = DockStyle.Fill;
 
-            mainGrid.Controls.Add(app, 0, 1);
-            mainGrid.Controls.Add(audioPlayer, 0, 2); 
+            mainGrid.Controls.Add(_appControl, 0, 1);
+            mainGrid.Controls.Add(_audioPlayerControl, 0, 2);
+            headerCenterLayout.Controls.Add(_searchBarControl, 0, 0);
 
-            headerCenterLayout.Controls.Add(searchBar, 0, 0);
-            _currentContent = app;
+            _currentContent = _appControl;
         }
 
         private void ClearCurrentContent()

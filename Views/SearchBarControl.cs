@@ -1,19 +1,44 @@
 ﻿using System.Drawing.Drawing2D;
+using Vibes.Interfaces;
+using Vibes.Models;
 
 namespace Vibes.Views
 {
     public partial class SearchBarControl : UserControl
     {
-        private AudioPlayerControl? _audioPlayer;
+        private IPlaybackQueueManagerService _queueManager;
+        private IAudioStreamingService _streamingService;
 
-        public SearchBarControl()
+        public SearchBarControl(IPlaybackQueueManagerService queueManager, IAudioStreamingService audioStreamingService)
         {
             InitializeComponent();
+            _queueManager = queueManager;
+            _streamingService = audioStreamingService;
+            Load += SearchBarControl_Load;
         }
 
-        public SearchBarControl(AudioPlayerControl audioPlayer) : this()
+        private void SearchBarControl_Load(object? sender, EventArgs e)
         {
-            _audioPlayer = audioPlayer;
+            Form topLevelForm = this.FindForm() ?? (Form)Application.OpenForms[0]!;
+
+            if (searchResultsView.Columns.Count == 0)
+            {
+                searchResultsView.Columns.Add("MainData", searchResultsView.ClientSize.Width);
+                var heightSpacer = new ImageList { ImageSize = new Size(48, 48) };
+                searchResultsView.SmallImageList = heightSpacer;
+            }
+
+            topLevelForm.Controls.Add(searchResultsView);
+
+            var clickFilter = new ClickOutsideMessageFilter(
+                searchResultsView,
+                searchTextBox,
+                () => searchResultsView.Visible = false
+            );
+
+            Application.AddMessageFilter(clickFilter);
+
+            Disposed += (s, ev) => Application.RemoveMessageFilter(clickFilter);
         }
 
         private async void SearchButton_Click(object? sender, EventArgs e)
@@ -21,7 +46,7 @@ namespace Vibes.Views
             string query = searchTextBox.Text;
             if (string.IsNullOrWhiteSpace(query)) return;
 
-            var tracks = await streamingService.SearchTracksAsync(query);
+            var tracks = await _streamingService.SearchTracksAsync(query);
             searchResultsView.Items.Clear();
 
             using var client = new HttpClient();
@@ -33,17 +58,17 @@ namespace Vibes.Views
                     try
                     {
                         byte[] imgBytes = await client.GetByteArrayAsync(track.CoverUrl);
-                        using var ms = new System.IO.MemoryStream(imgBytes);
+                        using var ms = new MemoryStream(imgBytes);
                         track.CachedCover = new Bitmap(ms);
                     }
-                    catch { /* Fallback to null if image link fails */ }
+                    catch { }
                 }
 
                 ListViewItem item = new ListViewItem(track.Title) { Tag = track };
                 searchResultsView.Items.Add(item);
             }
 
-            if (searchResultsView.Items.Count > 0)
+            if (searchResultsView.Items.Count > 0 && searchTextBox.Parent != null)
             {
                 Form topLevelForm = this.FindForm() ?? Application.OpenForms[0]!;
                 Point globalScreenPoint = searchTextBox.Parent.PointToScreen(searchTextBox.Location);
@@ -61,13 +86,13 @@ namespace Vibes.Views
             if (searchResultsView.SelectedItems.Count == 0) return;
 
             ListViewItem selectedItem = searchResultsView.SelectedItems[0];
-            TrackSearchResult selectedTrack = (TrackSearchResult)selectedItem.Tag!;
+            Track selectedTrack = (Track)selectedItem.Tag!;
 
             searchResultsView.Visible = false;
 
-            if (!string.IsNullOrEmpty(selectedTrack?.StreamUrl) && _audioPlayer != null)
+            if (!string.IsNullOrEmpty(selectedTrack?.StreamUrl))
             {
-                await _audioPlayer.PlayStreamAsync(selectedTrack.StreamUrl);
+                _queueManager.PlaySearchTrackNow(selectedTrack);
             }
         }
 
@@ -97,7 +122,13 @@ namespace Vibes.Views
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            var track = (TrackSearchResult)e.Item.Tag;
+            if(e?.Item?.Tag == null || e.Item.Tag is not Track)
+            {
+                e?.DrawDefault = true;
+                return;
+            }
+
+            var track = (Track)e.Item.Tag;
             Rectangle bounds = e.Bounds;
 
             bool isSelected = e.Item.Selected;

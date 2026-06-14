@@ -25,7 +25,6 @@
         private TextBox searchTextBox = null!;
         private FontAwesome.Sharp.IconButton searchButton = null!;
         private ListView searchResultsView = null!;
-        private AudioStreamingService streamingService = new AudioStreamingService();
         private ListViewItem? _hoveredItem = null;
 
         /// <summary> 
@@ -119,22 +118,11 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(searchBarLayout);
-            Form topLevelForm = this.FindForm() ?? (Form)Application.OpenForms[0]!;
-            topLevelForm.Controls.Add(searchResultsView);
             Name = "SearchBarControl";
             Size = new Size(941, 466);
             searchBarLayout.ResumeLayout(false);
             searchBarLayout.PerformLayout();
             ResumeLayout(false);
-
-            var clickFilter = new ClickOutsideMessageFilter(
-                searchResultsView,
-                searchTextBox,
-                () => searchResultsView.Visible = false 
-            );
-
-            Application.AddMessageFilter(clickFilter);
-            Disposed += (s, e) => Application.RemoveMessageFilter(clickFilter);
         }
 
         #endregion

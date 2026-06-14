@@ -5,6 +5,7 @@ using Vibes.Services;
 using Serilog;
 using Microsoft.Extensions.Logging;
 using Vibes.Database;
+using Vibes.Views;
 
 namespace Vibes
 {
@@ -59,13 +60,17 @@ namespace Vibes
                     ClientId = clientId
                 };
                 services.AddSingleton(options);
-                services.AddSingleton<Auth0Service>();
-                services.AddSingleton<IAuth0Service>(sp => sp.GetRequiredService<Auth0Service>());
+                services.AddSingleton<IAuth0Service, Auth0Service>();
             }
 
-            services.AddSingleton<AvatarService>();
-            services.AddSingleton<IAvatarService>(sp => sp.GetRequiredService<AvatarService>());
-            services.AddSingleton<Vibes>();
+            services.AddSingleton<IAudioStreamingService, AudioStreamingService>();
+            services.AddSingleton<IAvatarService, AvatarService>();
+            services.AddSingleton<IPlaybackQueueManagerService, PlaybackQueueManagerService>();
+
+            services.AddTransient<ApplicationControl>();
+            services.AddTransient<AudioPlayerControl>();
+            services.AddTransient<SearchBarControl>();
+            services.AddTransient<Vibes>();
 
             var serviceProvider = services.BuildServiceProvider(validateScopes: true);
             var mainForm = serviceProvider.GetRequiredService<Vibes>();
