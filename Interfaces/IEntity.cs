@@ -1,6 +1,6 @@
 ﻿namespace Vibes.Interfaces
 {
-    internal interface IEntity<T>
+    public interface IEntity<T>
     {
         T Id { get; }
     }

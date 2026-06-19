@@ -45,6 +45,7 @@ namespace Vibes
             exitButton = new IconButton();
             logoIcon = new PictureBox();
             headerCenterLayout = new TableLayoutPanel();
+            homeButton = new IconButton();
             userAvatar = new PictureBox();
             copyrightLabel = new Label();
             pageContainer = new TableLayoutPanel();
@@ -61,31 +62,30 @@ namespace Vibes
             // 
             // avatarMenu
             // 
-            avatarMenu.BackColor = Color.FromArgb(240, 245, 244);
+            avatarMenu.BackColor = Color.FromArgb(28, 28, 28);
             avatarMenu.Items.AddRange(new ToolStripItem[] { accountToolStripMenuItem, logoutToolStripMenuItem });
             avatarMenu.Name = "avatarMenu";
-            avatarMenu.Size = new Size(126, 84);
+            avatarMenu.Size = new Size(127, 72);
             // 
             // accountToolStripMenuItem
             // 
-            accountToolStripMenuItem.AutoSize = false;
-            accountToolStripMenuItem.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            accountToolStripMenuItem.ForeColor = Color.Black;
+            accountToolStripMenuItem.Font = new Font("Segoe UI", 10F);
+            accountToolStripMenuItem.ForeColor = Color.FromArgb(230, 230, 230);
             accountToolStripMenuItem.Name = "accountToolStripMenuItem";
-            accountToolStripMenuItem.Padding = new Padding(0);
-            accountToolStripMenuItem.Size = new Size(120, 40);
+            accountToolStripMenuItem.Padding = new Padding(12, 6, 12, 6);
+            accountToolStripMenuItem.Size = new Size(150, 34);
             accountToolStripMenuItem.Text = "Account";
             accountToolStripMenuItem.Click += AvatarMenu_Account_Click;
             // 
             // logoutToolStripMenuItem
             // 
-            logoutToolStripMenuItem.AutoSize = false;
-            logoutToolStripMenuItem.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            logoutToolStripMenuItem.ForeColor = Color.Black;
+            logoutToolStripMenuItem.Font = new Font("Segoe UI", 10F);
+            logoutToolStripMenuItem.ForeColor = Color.FromArgb(230, 230, 230);
             logoutToolStripMenuItem.Name = "logoutToolStripMenuItem";
-            logoutToolStripMenuItem.Size = new Size(120, 40);
+            logoutToolStripMenuItem.Padding = new Padding(12, 6, 12, 6);
+            logoutToolStripMenuItem.Size = new Size(150, 34);
             logoutToolStripMenuItem.Text = "Log out";
-            logoutToolStripMenuItem.Click += AvatarMenu_Logout_Click;
+            logoutToolStripMenuItem.Click += UserLogout;
             // 
             // mainGrid
             // 
@@ -97,10 +97,10 @@ namespace Vibes
             mainGrid.Margin = new Padding(0);
             mainGrid.Name = "mainGrid";
             mainGrid.RowCount = 3;
-            mainGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+            mainGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));
             mainGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             mainGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));
-            mainGrid.Size = new Size(898, 598);
+            mainGrid.Size = new Size(1898, 1022);
             mainGrid.TabIndex = 0;
             // 
             // titleBar
@@ -112,7 +112,7 @@ namespace Vibes
             titleBar.Location = new Point(0, 0);
             titleBar.Margin = new Padding(0);
             titleBar.Name = "titleBar";
-            titleBar.Size = new Size(898, 40);
+            titleBar.Size = new Size(1898, 50);
             titleBar.TabIndex = 0;
             // 
             // titleBarLayout
@@ -129,7 +129,7 @@ namespace Vibes
             titleBarLayout.Margin = new Padding(0);
             titleBarLayout.Name = "titleBarLayout";
             titleBarLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            titleBarLayout.Size = new Size(898, 40);
+            titleBarLayout.Size = new Size(1898, 50);
             titleBarLayout.TabIndex = 0;
             titleBarLayout.MouseDown += Logo_MouseDown;
             titleBarLayout.MouseMove += Logo_MouseMove;
@@ -145,11 +145,11 @@ namespace Vibes
             windowActions.Controls.Add(enlargeButton, 1, 0);
             windowActions.Controls.Add(exitButton, 2, 0);
             windowActions.Dock = DockStyle.Fill;
-            windowActions.Location = new Point(748, 0);
+            windowActions.Location = new Point(1748, 0);
             windowActions.Margin = new Padding(0);
             windowActions.Name = "windowActions";
             windowActions.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            windowActions.Size = new Size(150, 40);
+            windowActions.Size = new Size(150, 50);
             windowActions.TabIndex = 0;
             // 
             // minimizeButton
@@ -168,7 +168,7 @@ namespace Vibes
             minimizeButton.Location = new Point(0, 0);
             minimizeButton.Margin = new Padding(0);
             minimizeButton.Name = "minimizeButton";
-            minimizeButton.Size = new Size(50, 40);
+            minimizeButton.Size = new Size(50, 50);
             minimizeButton.TabIndex = 2;
             minimizeButton.UseVisualStyleBackColor = false;
             minimizeButton.Click += MinimizeButton_Click;
@@ -188,7 +188,7 @@ namespace Vibes
             enlargeButton.Location = new Point(50, 0);
             enlargeButton.Margin = new Padding(0);
             enlargeButton.Name = "enlargeButton";
-            enlargeButton.Size = new Size(50, 40);
+            enlargeButton.Size = new Size(50, 50);
             enlargeButton.TabIndex = 1;
             enlargeButton.UseVisualStyleBackColor = false;
             enlargeButton.Click += EnlargeButton_Click;
@@ -209,7 +209,7 @@ namespace Vibes
             exitButton.Location = new Point(100, 0);
             exitButton.Margin = new Padding(0);
             exitButton.Name = "exitButton";
-            exitButton.Size = new Size(50, 40);
+            exitButton.Size = new Size(50, 50);
             exitButton.TabIndex = 0;
             exitButton.UseVisualStyleBackColor = false;
             exitButton.Click += ExitButton_Click;
@@ -222,7 +222,7 @@ namespace Vibes
             logoIcon.Location = new Point(5, 5);
             logoIcon.Margin = new Padding(5, 5, 0, 5);
             logoIcon.Name = "logoIcon";
-            logoIcon.Size = new Size(40, 30);
+            logoIcon.Size = new Size(40, 40);
             logoIcon.SizeMode = PictureBoxSizeMode.Zoom;
             logoIcon.TabIndex = 1;
             logoIcon.TabStop = false;
@@ -230,31 +230,57 @@ namespace Vibes
             // 
             // headerCenterLayout
             // 
-            headerCenterLayout.ColumnCount = 2;
+            headerCenterLayout.ColumnCount = 4;
+            headerCenterLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 360F));
+            headerCenterLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
             headerCenterLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             headerCenterLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
-            headerCenterLayout.Controls.Add(userAvatar, 1, 0);
+            headerCenterLayout.Controls.Add(homeButton, 1, 0);
+            headerCenterLayout.Controls.Add(userAvatar, 3, 0);
             headerCenterLayout.Dock = DockStyle.Fill;
             headerCenterLayout.Location = new Point(53, 3);
             headerCenterLayout.Name = "headerCenterLayout";
             headerCenterLayout.RowCount = 1;
             headerCenterLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            headerCenterLayout.Size = new Size(692, 34);
+            headerCenterLayout.Size = new Size(1692, 44);
             headerCenterLayout.TabIndex = 2;
+            // 
+            // homeButton
+            // 
+            homeButton.BackColor = Color.FromArgb(36, 36, 36);
+            homeButton.Cursor = Cursors.Hand;
+            homeButton.Dock = DockStyle.Fill;
+            homeButton.FlatAppearance.BorderSize = 0;
+            homeButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(50, 50, 50);
+            homeButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(45, 45, 45);
+            homeButton.FlatStyle = FlatStyle.Flat;
+            homeButton.IconChar = IconChar.House;
+            homeButton.IconColor = Color.White;
+            homeButton.IconFont = IconFont.Auto;
+            homeButton.IconSize = 22;
+            homeButton.Location = new Point(1592, 0);
+            homeButton.Margin = new Padding(0);
+            homeButton.Name = "homeButton";
+            homeButton.Size = new Size(50, 44);
+            homeButton.TabIndex = 3;
+            homeButton.UseVisualStyleBackColor = false;
+            homeButton.Click += HomeButton_Click;
+            homeButton.Paint += HomeButton_Paint;
             // 
             // userAvatar
             // 
             userAvatar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             userAvatar.ContextMenuStrip = avatarMenu;
             userAvatar.Cursor = Cursors.Hand;
-            userAvatar.Location = new Point(642, 0);
-            userAvatar.Margin = new Padding(0);
+            userAvatar.Location = new Point(1642, 2);
+            userAvatar.Margin = new Padding(0, 2, 0, 2);
             userAvatar.Name = "userAvatar";
-            userAvatar.Size = new Size(50, 34);
+            userAvatar.Size = new Size(50, 40);
             userAvatar.SizeMode = PictureBoxSizeMode.Zoom;
             userAvatar.TabIndex = 2;
             userAvatar.TabStop = false;
             userAvatar.Visible = false;
+            userAvatar.MouseUp += UserAvatar_MouseUp;
             // 
             // copyrightLabel
             // 
@@ -278,7 +304,7 @@ namespace Vibes
             pageContainer.Padding = new Padding(1);
             pageContainer.RowCount = 1;
             pageContainer.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            pageContainer.Size = new Size(900, 600);
+            pageContainer.Size = new Size(1900, 1024);
             pageContainer.TabIndex = 2;
             pageContainer.Paint += pageContainer_Paint;
             // 
@@ -287,7 +313,7 @@ namespace Vibes
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Black;
-            ClientSize = new Size(900, 600);
+            ClientSize = new Size(1900, 1024);
             ControlBox = false;
             Controls.Add(pageContainer);
             FormBorderStyle = FormBorderStyle.None;
@@ -316,6 +342,7 @@ namespace Vibes
         private IconButton exitButton;
         private IconButton enlargeButton;
         private IconButton minimizeButton;
+        private IconButton homeButton;
         private PictureBox logoIcon;
         private Label copyrightLabel;
         private Control currentControl;

@@ -2,15 +2,8 @@
 {
     partial class SearchBarControl
     {
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary> 
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -22,111 +15,71 @@
 
         #region Component Designer generated code
 
+        private Panel searchContainerPanel = null!;
         private TextBox searchTextBox = null!;
-        private FontAwesome.Sharp.IconButton searchButton = null!;
         private ListView searchResultsView = null!;
-        private ListViewItem? _hoveredItem = null;
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
+            searchContainerPanel = new Panel();
             searchTextBox = new TextBox();
-            searchButton = new FontAwesome.Sharp.IconButton();
             searchResultsView = new ListView();
-            searchBarLayout = new TableLayoutPanel();
-            searchBarLayout.SuspendLayout();
             SuspendLayout();
+            // 
+            // searchContainerPanel
+            // 
+            searchContainerPanel.BackColor = Color.Transparent;
+            searchContainerPanel.Controls.Add(searchTextBox);
+            searchContainerPanel.Location = new Point(5, 2);
+            searchContainerPanel.Name = "searchContainerPanel";
+            searchContainerPanel.Size = new Size(350, 40);
+            searchContainerPanel.TabIndex = 0;
+            searchContainerPanel.Paint += SearchContainerPanel_Paint;
             // 
             // searchTextBox
             // 
-            searchTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            searchTextBox.BackColor = Color.FromArgb(30, 30, 35);
-            searchTextBox.Font = new Font("Segoe UI", 10F);
+            searchTextBox.BackColor = Color.FromArgb(36, 36, 36);
+            searchTextBox.BorderStyle = BorderStyle.None; // Removes boxy borders
+            searchTextBox.Font = new Font("Segoe UI", 11F, FontStyle.Regular);
             searchTextBox.ForeColor = Color.White;
-            searchTextBox.Location = new Point(538, 3);
+            searchTextBox.Location = new Point(36, 10); // Offset to clear the vector search icon
             searchTextBox.Name = "searchTextBox";
-            searchTextBox.Size = new Size(300, 25);
+            searchTextBox.Size = new Size(300, 20);
             searchTextBox.TabIndex = 0;
+            searchTextBox.Text = "";
+            searchTextBox.PlaceholderText = "What do you want to play?";
+            searchTextBox.TextChanged += SearchTextBox_TextChanged;
             searchTextBox.KeyDown += SearchTextBox_KeyDown;
-            // 
-            // searchButton
-            // 
-            searchButton.BackColor = Color.FromArgb(50, 50, 60);
-            searchButton.Cursor = Cursors.Hand;
-            searchButton.FlatAppearance.BorderSize = 0;
-            searchButton.FlatStyle = FlatStyle.Flat;
-            searchButton.ForeColor = Color.White;
-            searchButton.IconChar = FontAwesome.Sharp.IconChar.None;
-            searchButton.IconColor = Color.Black;
-            searchButton.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            searchButton.Location = new Point(844, 3);
-            searchButton.Name = "searchButton";
-            searchButton.Size = new Size(80, 30);
-            searchButton.TabIndex = 1;
-            searchButton.Text = "Search";
-            searchButton.UseVisualStyleBackColor = false;
-            searchButton.Click += SearchButton_Click;
             // 
             // searchResultsView
             // 
-            searchResultsView = new ListView();
             searchResultsView.View = View.Details;
             searchResultsView.FullRowSelect = true;
             searchResultsView.Visible = false;
-            searchResultsView.Size = new Size(400, 310);
+            searchResultsView.Size = new Size(360, 310);
             searchResultsView.BackColor = Color.FromArgb(20, 20, 20);
             searchResultsView.BorderStyle = BorderStyle.None;
             searchResultsView.HeaderStyle = ColumnHeaderStyle.None;
-            searchResultsView.Columns.Add("MainData", searchResultsView.ClientSize.Width);
-
-            var heightSpacer = new ImageList { ImageSize = new Size(48, 48) };
-            searchResultsView.SmallImageList = heightSpacer;
             searchResultsView.OwnerDraw = true;
-            searchResultsView.DrawColumnHeader += (s, e) => e.DrawDefault = false; 
-            searchResultsView.DrawItem += SearchResultsView_DrawItem; 
-            searchResultsView.DrawSubItem += SearchResultsView_DrawSubItem;   
             searchResultsView.Click += SearchResultsView_Click;
-            searchResultsView.MouseMove += SearchResultsView_MouseMove;
-            searchResultsView.MouseLeave += SearchResultsView_MouseLeave;
+            searchResultsView.DrawItem += SearchResultsView_DrawItem;
+            searchResultsView.DrawSubItem += SearchResultsView_DrawSubItem;
             searchResultsView.SizeChanged += (s, e) => {
                 if (searchResultsView.Columns.Count > 0)
-                {
                     searchResultsView.Columns[0].Width = searchResultsView.ClientSize.Width;
-                }
             };
-            // 
-            // searchBarLayout
-            // 
-            searchBarLayout.ColumnCount = 2;
-            searchBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            searchBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
-            searchBarLayout.Controls.Add(searchTextBox, 0, 0);
-            searchBarLayout.Controls.Add(searchButton, 1, 0);
-            searchBarLayout.Dock = DockStyle.Fill;
-            searchBarLayout.Location = new Point(0, 0);
-            searchBarLayout.Name = "searchBarLayout";
-            searchBarLayout.RowCount = 1;
-            searchBarLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            searchBarLayout.Size = new Size(941, 466);
-            searchBarLayout.TabIndex = 3;
             // 
             // SearchBarControl
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            Controls.Add(searchBarLayout);
+            BackColor = Color.Transparent;
+            Controls.Add(searchContainerPanel);
             Name = "SearchBarControl";
-            Size = new Size(941, 466);
-            searchBarLayout.ResumeLayout(false);
-            searchBarLayout.PerformLayout();
+            Size = new Size(600, 60);
             ResumeLayout(false);
         }
 
         #endregion
-
-        private TableLayoutPanel searchBarLayout;
     }
 }

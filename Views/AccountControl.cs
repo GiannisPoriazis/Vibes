@@ -7,6 +7,8 @@ namespace Vibes.Views
         private readonly IAuth0Service? _authService;
         private readonly IAvatarService? _avatarService;
 
+        public event EventHandler? Logout; 
+
         public AccountControl()
         {
             InitializeComponent();
@@ -16,16 +18,43 @@ namespace Vibes.Views
         {
             _authService = authService;
             _avatarService = avatarService;
+            _authService?.UserChanged += SetupAccountForm;
+        }
 
-            if (_authService != null)
+        private void SetupAccountForm(object? sender, EventArgs e)
+        {
+            if (_authService != null && _authService.CurrentUser != null)
             {
-                usernameInput.Text = _authService.CurrentUser?.Username ?? string.Empty;
-                emailInput.Text = _authService.CurrentUser?.Email ?? string.Empty;
+                userIdInput.Text = _authService.CurrentUser.Subject ?? string.Empty;
+                usernameInput.Text = _authService.CurrentUser.Username ?? string.Empty;
+                emailInput.Text = _authService.CurrentUser.Email ?? string.Empty;
 
-                if(_avatarService != null)
+                if (_avatarService != null && !string.IsNullOrEmpty(_authService.CurrentUser.Picture))
                 {
-                    _avatarService.LoadAvatarIntoAsync(avatarIcon, _authService.CurrentUser?.Picture);
+                    _ = _avatarService.LoadAvatarIntoAsync(avatarIcon, _authService.CurrentUser.Picture);
                 }
+            }
+        }
+
+        private void BtnBack_Click(object? sender, EventArgs e)
+        {
+            // Pending implementation: Will handle navigation to homepage
+        }
+
+        private async void BtnLogout_Click(object? sender, EventArgs e)
+        {
+            if (_authService == null) return;
+
+            var confirmResult = MessageBox.Show(
+                "Are you sure you want to log out?",
+                "Confirm Logout",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (confirmResult == DialogResult.Yes)
+            {
+                Logout?.Invoke(this, new EventArgs());
             }
         }
     }

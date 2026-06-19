@@ -16,6 +16,9 @@
     <Compile Update="Views\LoginControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="Views\MediaDisplayControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="Views\SearchBarControl.cs">
       <SubType>UserControl</SubType>
     </Compile>

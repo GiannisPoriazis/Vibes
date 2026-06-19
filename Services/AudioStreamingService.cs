@@ -84,11 +84,13 @@ public class AudioStreamingService : IAudioStreamingService
                 {
                     trackItem = new Podcast
                     {
+                        Id = int.Parse(item.GetProperty("id").GetString()!),
                         Type = TrackType.Podcast,
-                        Title = item.GetProperty("name").GetString() ?? "",
-                        Artist = item.GetProperty("artist_name").GetString() ?? "",
-                        CoverUrl = item.GetProperty("image").GetString() ?? "",
-                        StreamUrl = item.GetProperty("audio").GetString() ?? "",
+                        Title = item.GetProperty("name").GetString() ?? string.Empty,
+                        Artist = item.GetProperty("artist_name").GetString() ?? string.Empty,
+                        Album = item.GetProperty("album_name").GetString() ?? string.Empty,
+                        CoverUrl = item.GetProperty("image").GetString() ?? string.Empty,
+                        StreamUrl = item.GetProperty("audio").GetString() ?? string.Empty,
                         Duration = durationSeconds
                     };
                 }
@@ -96,13 +98,29 @@ public class AudioStreamingService : IAudioStreamingService
                 {
                     trackItem = new Song
                     {
+                        Id = int.Parse(item.GetProperty("id").GetString()!),
                         Type = TrackType.Song,
-                        Title = item.GetProperty("name").GetString() ?? "",
-                        Artist = item.GetProperty("artist_name").GetString() ?? "",
-                        CoverUrl = item.GetProperty("image").GetString() ?? "",
-                        StreamUrl = item.GetProperty("audio").GetString() ?? "",
+                        Title = item.GetProperty("name").GetString() ?? string.Empty,
+                        Artist = item.GetProperty("artist_name").GetString() ?? string.Empty,
+                        Album = item.GetProperty("album_name").GetString() ?? string.Empty,
+                        CoverUrl = item.GetProperty("image").GetString() ?? string.Empty,
+                        StreamUrl = item.GetProperty("audio").GetString() ?? string.Empty,
                         Duration = durationSeconds
                     };
+                }
+
+                if (!string.IsNullOrEmpty(trackItem.CoverUrl))
+                {
+                    try
+                    {
+                        byte[] imgBytes = await _client.GetByteArrayAsync(trackItem.CoverUrl);
+                        using var ms = new MemoryStream(imgBytes);
+                        trackItem.CachedCover = new Bitmap(ms);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to load track cover: {1}", ex.Message);
+                    }
                 }
 
                 results.Add(trackItem);

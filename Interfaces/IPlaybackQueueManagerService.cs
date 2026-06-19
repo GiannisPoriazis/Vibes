@@ -7,8 +7,9 @@ namespace Vibes.Interfaces
     {
         Track? CurrentTrack { get; }
         void SetAudioPlayer(AudioPlayerControl audioPlayer);
-        void PlayPlaylist(List<Track> playlistTracks, int startingIndex = 0);
+        void PlayPlaylist(IEnumerable<Track> playlistTracks, int startingIndex = 0);
         void PlaySearchTrackNow(Track newTrack);
+        void AppendToFutureQueue(Track newTrack);
         Task PlayNextTrackAsync();
         void PlayPreviousTrack();
     }

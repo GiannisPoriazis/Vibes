@@ -1,4 +1,5 @@
 ﻿using System.Drawing.Drawing2D;
+using Vibes.Extensions;
 using Vibes.Interfaces;
 using Vibes.Models;
 
@@ -6,14 +7,22 @@ namespace Vibes.Views
 {
     public partial class SearchBarControl : UserControl
     {
-        private IPlaybackQueueManagerService _queueManager;
-        private IAudioStreamingService _streamingService;
+        private readonly IPlaybackQueueManagerService _queueManager;
+        private readonly IAudioStreamingService _streamingService;
+        private readonly System.Windows.Forms.Timer _debounceTimer;
+
+        public event EventHandler<TrackSelectedEventArgs>? TrackSelected;
 
         public SearchBarControl(IPlaybackQueueManagerService queueManager, IAudioStreamingService audioStreamingService)
         {
-            InitializeComponent();
             _queueManager = queueManager;
             _streamingService = audioStreamingService;
+
+            // Initialize the debounce configuration (350ms delay is standard for input fields)
+            _debounceTimer = new System.Windows.Forms.Timer { Interval = 350 };
+            _debounceTimer.Tick += DebounceTimer_Tick;
+
+            InitializeComponent();
             Load += SearchBarControl_Load;
         }
 
@@ -38,46 +47,95 @@ namespace Vibes.Views
 
             Application.AddMessageFilter(clickFilter);
 
-            Disposed += (s, ev) => Application.RemoveMessageFilter(clickFilter);
+            Disposed += (s, ev) =>
+            {
+                _debounceTimer.Stop();
+                _debounceTimer.Dispose();
+                Application.RemoveMessageFilter(clickFilter);
+            };
         }
 
-        private async void SearchButton_Click(object? sender, EventArgs e)
+        private void SearchTextBox_TextChanged(object? sender, EventArgs e)
         {
-            string query = searchTextBox.Text;
-            if (string.IsNullOrWhiteSpace(query)) return;
+            // Reset the timer on every keystroke to restart the delay sequence
+            _debounceTimer.Stop();
+            _debounceTimer.Start();
+        }
 
-            var tracks = await _streamingService.SearchTracksAsync(query);
-            searchResultsView.Items.Clear();
+        private async void DebounceTimer_Tick(object? sender, EventArgs e)
+        {
+            _debounceTimer.Stop(); // Halt the timer loops to begin processing
+            await ExecuteSearchQueryAsync();
+        }
 
-            using var client = new HttpClient();
-
-            foreach (var track in tracks)
+        private async Task ExecuteSearchQueryAsync()
+        {
+            string query = searchTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
             {
-                if (!string.IsNullOrEmpty(track.CoverUrl))
-                {
-                    try
-                    {
-                        byte[] imgBytes = await client.GetByteArrayAsync(track.CoverUrl);
-                        using var ms = new MemoryStream(imgBytes);
-                        track.CachedCover = new Bitmap(ms);
-                    }
-                    catch { }
-                }
-
-                ListViewItem item = new ListViewItem(track.Title) { Tag = track };
-                searchResultsView.Items.Add(item);
+                searchResultsView.Visible = false;
+                return;
             }
 
-            if (searchResultsView.Items.Count > 0 && searchTextBox.Parent != null)
+            try
             {
-                Form topLevelForm = this.FindForm() ?? Application.OpenForms[0]!;
-                Point globalScreenPoint = searchTextBox.Parent.PointToScreen(searchTextBox.Location);
-                Point formRelativePoint = topLevelForm.PointToClient(globalScreenPoint);
+                var tracks = await _streamingService.SearchTracksAsync(query);
+                searchResultsView.Items.Clear();
 
-                searchResultsView.Location = new Point(formRelativePoint.X, formRelativePoint.Y + searchTextBox.Height);
-                searchResultsView.Visible = true;
-                searchResultsView.BringToFront();
-                searchResultsView.Focus();
+                foreach (var track in tracks)
+                {
+                    ListViewItem item = new ListViewItem(track.Title) { Tag = track };
+                    searchResultsView.Items.Add(item);
+                }
+
+                if (searchResultsView.Items.Count > 0 && searchContainerPanel != null)
+                {
+                    Form topLevelForm = this.FindForm() ?? Application.OpenForms[0]!;
+                    Point globalScreenPoint = searchContainerPanel.Parent.PointToScreen(searchContainerPanel.Location);
+                    Point formRelativePoint = topLevelForm.PointToClient(globalScreenPoint);
+
+                    searchResultsView.Location = new Point(formRelativePoint.X, formRelativePoint.Y + searchContainerPanel.Height + 4);
+                    searchResultsView.Width = searchContainerPanel.Width; // Match pill box width perfectly
+                    searchResultsView.Visible = true;
+                    searchResultsView.BringToFront();
+                }
+                else
+                {
+                    searchResultsView.Visible = false;
+                }
+            }
+            catch
+            {
+                searchResultsView.Visible = false;
+            }
+        }
+
+        private void SearchContainerPanel_Paint(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Draw the background pill container shape matching the dark palette theme
+            using (var bgBrush = new SolidBrush(Color.FromArgb(36, 36, 36)))
+            using (var path = new GraphicsPath())
+            {
+                int r = searchContainerPanel.Height - 1;
+                path.AddArc(0, 0, r, r, 90, 180);
+                path.AddArc(searchContainerPanel.Width - r - 1, 0, r, r, 270, 180);
+                path.CloseFigure();
+
+                g.FillPath(bgBrush, path);
+            }
+
+            // Draw a high-quality vector search loop icon manually on the left edge
+            using (var iconPen = new Pen(Color.FromArgb(180, 180, 180), 2f))
+            {
+                int cx = 18;
+                int cy = searchContainerPanel.Height / 2 - 1;
+                int radius = 6;
+
+                g.DrawEllipse(iconPen, cx - radius, cy - radius, radius * 2, radius * 2);
+                g.DrawLine(iconPen, cx + 4, cy + 4, cx + 10, cy + 10);
             }
         }
 
@@ -92,11 +150,16 @@ namespace Vibes.Views
 
             if (!string.IsNullOrEmpty(selectedTrack?.StreamUrl))
             {
-                _queueManager.PlaySearchTrackNow(selectedTrack);
+                var pageTitle = selectedTrack.Title;
+                var metadata = $"Single • {selectedTrack.Artist} • {selectedTrack.FormattedDuration}";
+                var tracks = new List<Track> { selectedTrack };
+
+                var args = new TrackSelectedEventArgs(pageTitle, metadata, tracks, selectedTrack);
+                TrackSelected?.Invoke(this, args);
             }
         }
 
-        private void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
+        private async void SearchTextBox_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Escape)
             {
@@ -105,9 +168,10 @@ namespace Vibes.Views
             }
             else if (e.KeyCode == Keys.Enter)
             {
-                SearchButton_Click(this, EventArgs.Empty);
+                _debounceTimer.Stop();
                 e.Handled = true;
                 e.SuppressKeyPress = true;
+                await ExecuteSearchQueryAsync();
             }
         }
 
@@ -122,17 +186,15 @@ namespace Vibes.Views
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            if(e?.Item?.Tag == null || e.Item.Tag is not Track)
+            if (e?.Item?.Tag == null || e.Item.Tag is not Track track)
             {
-                e?.DrawDefault = true;
+                e!.DrawDefault = true;
                 return;
             }
 
-            var track = (Track)e.Item.Tag;
             Rectangle bounds = e.Bounds;
-
             bool isSelected = e.Item.Selected;
-            bool isHovered = (e.Item == _hoveredItem);
+            bool isHovered = searchResultsView.IsRowHovered(e.ItemIndex);
 
             Color rowColor = (isSelected || isHovered) ? Color.FromArgb(45, 45, 45) : Color.FromArgb(20, 20, 20);
 
@@ -181,53 +243,6 @@ namespace Vibes.Views
             using (var subBrush = new SolidBrush(Color.FromArgb(160, 160, 160)))
             {
                 g.DrawString(subtitleText, subFont, subBrush, textStartX, bounds.Y + 26);
-            }
-        }
-
-        private void SearchResultsView_MouseMove(object? sender, MouseEventArgs e)
-        {
-            ListViewHitTestInfo hitTest = searchResultsView.HitTest(e.Location);
-            ListViewItem? currentItem = hitTest.Item;
-
-            if (currentItem != null)
-            {
-                searchResultsView.Cursor = Cursors.Hand;
-            }
-            else
-            {
-                searchResultsView.Cursor = Cursors.Default;
-            }
-
-            if (currentItem != _hoveredItem)
-            {
-                ListViewItem? oldHovered = _hoveredItem;
-                _hoveredItem = currentItem;
-
-                if (oldHovered != null && oldHovered.Index < searchResultsView.Items.Count)
-                {
-                    searchResultsView.Invalidate(oldHovered.Bounds);
-                }
-
-                if (_hoveredItem != null)
-                {
-                    searchResultsView.Invalidate(_hoveredItem.Bounds);
-                }
-            }
-        }
-
-        private void SearchResultsView_MouseLeave(object? sender, EventArgs e)
-        {
-            searchResultsView.Cursor = Cursors.Default;
-
-            if (_hoveredItem != null)
-            {
-                ListViewItem? oldHovered = _hoveredItem;
-                _hoveredItem = null;
-
-                if (oldHovered.Index < searchResultsView.Items.Count)
-                {
-                    searchResultsView.Invalidate(oldHovered.Bounds);
-                }
             }
         }
     }

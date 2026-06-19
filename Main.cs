@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Drawing.Drawing2D;
 using Vibes.Design;
 using Vibes.Interfaces;
+using Vibes.Models;
 using Vibes.Views;
 
 namespace Vibes
@@ -14,6 +15,8 @@ namespace Vibes
         private readonly ApplicationControl _appControl;
         private readonly AudioPlayerControl _audioPlayerControl;
         private readonly SearchBarControl _searchBarControl;
+        private readonly AccountControl _accountControl;
+        private readonly MediaDisplayControl _mediaDisplayControl;
         private ContextMenuStrip? _avatarMenu;
         private readonly ILogger<Vibes> _logger;
 
@@ -21,31 +24,76 @@ namespace Vibes
             ApplicationControl appControl,
             AudioPlayerControl audioPlayerControl,
             SearchBarControl searchBarControl,
-            IAuth0Service authService, 
-            ILogger<Vibes> logger, 
+            MediaDisplayControl mediaDisplayControl,
+            AccountControl accountControl,
+            IAuth0Service authService,
+            ILogger<Vibes> logger,
             IAvatarService avatarService
          )
         {
-            InitializeComponent();
             _appControl = appControl;
             _audioPlayerControl = audioPlayerControl;
             _searchBarControl = searchBarControl;
             _authService = authService;
+            _mediaDisplayControl = mediaDisplayControl;
+            _accountControl = accountControl;
             _avatarService = avatarService;
             _logger = logger;
 
+            _searchBarControl.TrackSelected += NavigateToTrackPage;
+            _appControl.PlaylistSelected += NavigateToTrackPage;
+            _accountControl.Logout += UserLogout;
+
+            InitializeComponent();
+
             if (avatarMenu != null)
             {
-                var roundedRenderer = new RoundedToolStripRenderer(_cornerRadius);
-                avatarMenu.Renderer = roundedRenderer;
-                avatarMenu.RenderMode = ToolStripRenderMode.Professional;
-                ToolStripManager.Renderer = roundedRenderer;
+                avatarMenu.Renderer = new ContextMenuThemeRenderer();
                 avatarMenu.ShowImageMargin = false;
-                avatarMenu.Opened += AvatarMenu_Opened;
             }
-            
+
             _avatarMenu = avatarMenu;
-            userAvatar.MouseUp += UserAvatar_MouseUp;
+        }
+
+        private void HomeButton_Paint(object sender, PaintEventArgs e)
+        {
+            var btn = (IconButton)sender;
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            using (var path = new GraphicsPath())
+            {
+                path.AddEllipse(0, 0, btn.Width - 1, btn.Height - 1);
+                btn.Region?.Dispose();
+                btn.Region = new Region(path);
+            }
+        }
+
+        private void HomeButton_Click(object? sender, EventArgs e)
+        {
+            // Εδώ θα βάλεις τη λογική επιστροφής στην αρχική σελίδα
+            // π.χ. NavigateToTrackPage(this, null!); ή εμφάνιση του αρχικού view
+        }
+
+        public void NavigateToTrackPage(object? sender, TrackSelectedEventArgs e)
+        {
+            _mediaDisplayControl.Dock = DockStyle.Fill;
+            _mediaDisplayControl.Entity = e.Entity;
+            _mediaDisplayControl.RenderContentContext(e.PageTitle, e.Metadata, e.Tracks);
+
+            if (e.Autoplay)
+            {
+                _mediaDisplayControl.AutoplayTracks();
+            }
+
+            var currentContent = _appControl.applicationLayout.GetControlFromPosition(1, 0);
+
+            if (currentContent != null)
+            {
+                _appControl.applicationLayout.Controls.Remove(currentContent);
+            }
+
+            _appControl.applicationLayout.Controls.Add(_mediaDisplayControl, 1, 0);
+            _mediaDisplayControl.BringToFront();
         }
 
         private void UpdateMainGridRegion()
@@ -167,14 +215,12 @@ namespace Vibes
             if (activeAudioPlayer != null)
             {
                 mainGrid.Controls.Remove(activeAudioPlayer);
-                activeAudioPlayer.Dispose(); 
             }
 
             var activeSearchBar = headerCenterLayout.GetControlFromPosition(0, 0);
             if (activeSearchBar != null)
             {
                 headerCenterLayout.Controls.Remove(activeSearchBar);
-                activeSearchBar.Dispose();
             }
 
             if (!mainGrid.Controls.Contains(copyrightLabel))
@@ -203,6 +249,8 @@ namespace Vibes
             _appControl.Dock = DockStyle.Fill;
             _audioPlayerControl.Dock = DockStyle.Fill;
             _searchBarControl.Dock = DockStyle.Fill;
+            _searchBarControl.Margin = new Padding(0, 0, 0, 0);
+            _searchBarControl.Anchor = AnchorStyles.Left;
 
             mainGrid.Controls.Add(_appControl, 0, 1);
             mainGrid.Controls.Add(_audioPlayerControl, 0, 2);
@@ -216,8 +264,14 @@ namespace Vibes
             if (_currentContent != null)
             {
                 mainGrid.Controls.Remove(_currentContent);
-                _currentContent.Dispose();
                 _currentContent = null;
+            }
+
+            var appMain = _appControl.applicationLayout.GetControlFromPosition(1, 0);
+
+            if (appMain != null)
+            {
+                _appControl.applicationLayout.Controls.Remove(appMain);
             }
         }
 
@@ -319,32 +373,13 @@ namespace Vibes
 
         private void AvatarMenu_Account_Click(object? sender, EventArgs e)
         {
-            var account = new AccountControl(_authService, _avatarService) { Dock = DockStyle.Fill };
             if (_currentContent is ApplicationControl appControl)
             {
-                appControl.applicationLayout.Controls.Add(account, 1, 0);
+                appControl.applicationLayout.Controls.Add(_accountControl, 1, 0);
             }
             else
             {
                 _logger?.LogWarning("Cannot open account details: current content is not ApplicationControl");
-            }
-        }
-
-        private void AvatarMenu_Opened(object? sender, EventArgs e)
-        {
-            if (sender is ContextMenuStrip cms)
-            {
-                var rect = new Rectangle(Point.Empty, cms.Size);
-                using var path = MakeRoundedPath(rect, 4);
-                cms.Region?.Dispose();
-                cms.Region = new Region(path);
-            }
-            else if (sender is ToolStripDropDownMenu dmenu)
-            {
-                var rect = new Rectangle(Point.Empty, dmenu.Size);
-                using var path = MakeRoundedPath(rect, 4);
-                dmenu.Region?.Dispose();
-                dmenu.Region = new Region(path);
             }
         }
 
@@ -366,7 +401,7 @@ namespace Vibes
             return path;
         }
 
-        private async void AvatarMenu_Logout_Click(object? sender, EventArgs e)
+        private async void UserLogout(object? sender, EventArgs e)
         {
             try
             {
@@ -409,6 +444,11 @@ namespace Vibes
         private void ExitButton_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void headerCenterLayout_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

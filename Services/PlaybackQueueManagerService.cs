@@ -29,9 +29,12 @@ namespace Vibes.Services
             await PlayNextTrackAsync();
         }
 
-        public async void PlayPlaylist(List<Track> playlistTracks, int startingIndex = 0)
+        public async void PlayPlaylist(IEnumerable<Track> playlistTracks, int startingIndex = 0)
         {
-            if (playlistTracks == null || playlistTracks.Count == 0) return;
+            if (!playlistTracks.Any())
+            {
+                return;
+            }
 
             _futureQueue.Clear();
             _historyStack.Clear();
@@ -42,11 +45,14 @@ namespace Vibes.Services
 
         public async void PlaySearchTrackNow(Track newTrack)
         {
-            if (newTrack == null) return;
-
             _futureQueue.Insert(0, newTrack);
 
             await PlayNextTrackAsync();
+        }
+
+        public void AppendToFutureQueue(Track newTrack)
+        {
+            _futureQueue.Add(newTrack);
         }
 
         public async Task PlayNextTrackAsync()
