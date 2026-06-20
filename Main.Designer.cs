@@ -131,9 +131,6 @@ namespace Vibes
             titleBarLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             titleBarLayout.Size = new Size(1898, 50);
             titleBarLayout.TabIndex = 0;
-            titleBarLayout.MouseDown += Logo_MouseDown;
-            titleBarLayout.MouseMove += Logo_MouseMove;
-            titleBarLayout.MouseUp += Logo_MouseUp;
             // 
             // windowActions
             // 
@@ -263,6 +260,7 @@ namespace Vibes
             homeButton.Name = "homeButton";
             homeButton.Size = new Size(50, 44);
             homeButton.TabIndex = 3;
+            homeButton.Visible = false;
             homeButton.UseVisualStyleBackColor = false;
             homeButton.Click += HomeButton_Click;
             homeButton.Paint += HomeButton_Paint;

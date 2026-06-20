@@ -108,7 +108,7 @@ namespace Vibes.Views
             playTrackBtn.IconChar = IconChar.Play;
             playTrackBtn.IconColor = Color.White;
             playTrackBtn.IconFont = IconFont.Auto;
-            playTrackBtn.IconSize = 20;
+            playTrackBtn.IconSize = 28;
             playTrackBtn.Location = new Point(70, 39);
             playTrackBtn.Name = "playTrackBtn";
             playTrackBtn.Size = new Size(50, 50);

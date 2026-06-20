@@ -52,5 +52,16 @@
       <CustomToolNamespace>Properties</CustomToolNamespace>
     </EmbeddedResource>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Update="Main.NativeWindow.cs">
+      <DependentUpon>Main.cs</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+	  <Compile Update="Main.Drawing.cs">
+		  <DependentUpon>Main.cs</DependentUpon>
+		  <SubType>Code</SubType>
+	  </Compile>
+  </ItemGroup>
 
 </Project>
