@@ -15,6 +15,7 @@ namespace Vibes
         private readonly AudioPlayerControl _audioPlayerControl;
         private readonly SearchBarControl _searchBarControl;
         private readonly AccountControl _accountControl;
+        private readonly HomeControl _homeControl;
         private readonly MediaDisplayControl _mediaDisplayControl;
         private ContextMenuStrip? _avatarMenu;
         private readonly ILogger<Vibes> _logger;
@@ -29,6 +30,7 @@ namespace Vibes
             SearchBarControl searchBarControl,
             MediaDisplayControl mediaDisplayControl,
             AccountControl accountControl,
+            HomeControl homeControl,
             IAuth0Service authService,
             ILogger<Vibes> logger,
             IAvatarService avatarService
@@ -40,11 +42,13 @@ namespace Vibes
             _authService = authService;
             _mediaDisplayControl = mediaDisplayControl;
             _accountControl = accountControl;
+            _homeControl = homeControl;
             _avatarService = avatarService;
             _logger = logger;
 
             _searchBarControl.TrackSelected += NavigateToTrackPage;
             _appControl.PlaylistSelected += NavigateToTrackPage;
+            _homeControl.EntitySelected += NavigateToTrackPage;
             _accountControl.Logout += UserLogout;
 
             InitializeComponent();
@@ -69,7 +73,16 @@ namespace Vibes
 
         private void HomeButton_Click(object? sender, EventArgs e)
         {
-            // Pending return assignment logic context mapping rules
+            _homeControl.Dock = DockStyle.Fill;
+
+            var currentContent = _appControl.applicationLayout.GetControlFromPosition(1, 0);
+            if (currentContent != null)
+            {
+                _appControl.applicationLayout.Controls.Remove(currentContent);
+            }
+
+            _appControl.applicationLayout.Controls.Add(_homeControl, 1, 0);
+            _homeControl.BringToFront();
         }
 
         public void NavigateToTrackPage(object? sender, TrackSelectedEventArgs e)
@@ -176,10 +189,19 @@ namespace Vibes
             _searchBarControl.Dock = DockStyle.Fill;
             _searchBarControl.Margin = new Padding(0);
             _searchBarControl.Anchor = AnchorStyles.Left;
+            _homeControl.Dock = DockStyle.Fill;
 
             mainGrid.Controls.Add(_appControl, 0, 1);
             mainGrid.Controls.Add(_audioPlayerControl, 0, 2);
             headerCenterLayout.Controls.Add(_searchBarControl, 0, 0);
+
+            _homeControl.SuspendLayout();
+
+            _appControl.applicationLayout.Controls.Add(_homeControl, 1, 0);
+
+            _appControl.applicationLayout.PerformLayout();
+            _homeControl.ResumeLayout(true);
+            _homeControl.PerformLayout();
 
             _currentContent = _appControl;
         }

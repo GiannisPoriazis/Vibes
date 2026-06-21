@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Views\HomeControl.Drawing.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Auth0.OidcClient.WinForms" Version="4.4.0" />
     <PackageReference Include="FontAwesome.Sharp" Version="6.6.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
@@ -44,6 +48,20 @@
     </Content>
     <Content Include="favicon.ico" />
   </ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Views\HomeControl.Drawing.cs">
+			<DependentUpon>Views\HomeControl.cs</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Views\MusicCardSkeleton.Drawing.cs">
+			<DependentUpon>Views\MusicCardSkeleton.cs</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+	</ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="Properties\Resources.resx">

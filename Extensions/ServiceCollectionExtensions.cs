@@ -62,6 +62,7 @@ namespace Vibes.Extensions
             services.AddTransient<SearchBarControl>();
             services.AddTransient<MediaDisplayControl>();
             services.AddTransient<AccountControl>();
+            services.AddTransient<HomeControl>();
             services.AddTransient<Vibes>();
 
             return services;
