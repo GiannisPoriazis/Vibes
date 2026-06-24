@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="../Vibes.Setup/Vibes.Setup.vdproj" Type="Installer">
+    <Build />
+  </Project>
   <Project Path="Vibes.csproj" />
 </Solution>

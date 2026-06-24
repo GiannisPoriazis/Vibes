@@ -362,6 +362,7 @@ namespace Vibes.Views
             if (availablePlaylists.Any())
             {
                 var itemAddToPlaylist = new ToolStripMenuItem("Add to playlist");
+                ((ToolStripDropDownMenu)itemAddToPlaylist.DropDown).ShowImageMargin = false;
 
                 foreach (var playlist in availablePlaylists)
                 {

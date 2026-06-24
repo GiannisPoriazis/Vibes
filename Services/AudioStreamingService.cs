@@ -9,6 +9,7 @@ public class AudioStreamingService : IAudioStreamingService
     private static readonly HttpClient _client = new HttpClient();
     private readonly string _apiClientId;
     private readonly ILogger<AudioStreamingService> _logger;
+    private const string JAMENDO_URL = "https://api.jamendo.com/v3.0";
 
     public AudioStreamingService(ILogger<AudioStreamingService> logger)
     {
@@ -20,13 +21,13 @@ public class AudioStreamingService : IAudioStreamingService
     {
         if (string.IsNullOrWhiteSpace(query)) return new List<Track>();
 
-        string url = $"https://api.jamendo.com/v3.0/tracks/?client_id={_apiClientId}&format=json&search={Uri.EscapeDataString(query.Trim())}&limit=10&include=musicinfo";
+        string url = $"{JAMENDO_URL}/tracks/?client_id={_apiClientId}&format=json&search={Uri.EscapeDataString(query.Trim())}&limit=10&include=musicinfo";
         return await FetchAndParseTracksAsync(url);
     }
 
     public async Task<List<Track>> GetTracksAsync(int limit, string? order = null, bool featured = false)
     {
-        string url = $"https://api.jamendo.com/v3.0/tracks/?client_id={_apiClientId}&format=json&limit={limit}&include=musicinfo";
+        string url = $"{JAMENDO_URL}/tracks/?client_id={_apiClientId}&format=json&limit={limit}&include=musicinfo";
 
         if (!string.IsNullOrEmpty(order))
         {

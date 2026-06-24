@@ -15,7 +15,14 @@ namespace Vibes.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=vibes.db");
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string vibesFolder = Path.Combine(appDataPath, "Vibes");
+
+            Directory.CreateDirectory(vibesFolder);
+
+            string dbPath = Path.Combine(vibesFolder, "vibes.db");
+
+            optionsBuilder.UseSqlite($"Data Source={dbPath}");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

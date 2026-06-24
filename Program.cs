@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Vibes.Database;
 using Vibes.Extensions;
 
 namespace Vibes

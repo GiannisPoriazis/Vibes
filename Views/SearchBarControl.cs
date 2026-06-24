@@ -11,6 +11,11 @@ namespace Vibes.Views
         private readonly IAudioStreamingService _streamingService;
         private readonly System.Windows.Forms.Timer _debounceTimer;
 
+        private readonly System.Windows.Forms.Timer _skeletonTimer;
+        private int _skeletonAlpha = 30;
+        private bool _skeletonIncreasing = true;
+        private bool _isLoading = false;
+
         public event EventHandler<TrackSelectedEventArgs>? TrackSelected;
 
         public SearchBarControl(IPlaybackQueueManagerService queueManager, IAudioStreamingService audioStreamingService)
@@ -18,9 +23,11 @@ namespace Vibes.Views
             _queueManager = queueManager;
             _streamingService = audioStreamingService;
 
-            // Initialize the debounce configuration (350ms delay is standard for input fields)
             _debounceTimer = new System.Windows.Forms.Timer { Interval = 350 };
             _debounceTimer.Tick += DebounceTimer_Tick;
+
+            _skeletonTimer = new System.Windows.Forms.Timer { Interval = 50 };
+            _skeletonTimer.Tick += SkeletonTimer_Tick;
 
             InitializeComponent();
             Load += SearchBarControl_Load;
@@ -51,21 +58,62 @@ namespace Vibes.Views
             {
                 _debounceTimer.Stop();
                 _debounceTimer.Dispose();
+                _skeletonTimer.Stop();
+                _skeletonTimer.Dispose();
                 Application.RemoveMessageFilter(clickFilter);
             };
         }
 
+        private void SkeletonTimer_Tick(object? sender, EventArgs e)
+        {
+            double totalMilliseconds = DateTime.Now.TimeOfDay.TotalMilliseconds;
+            double speedDivider = 800.0;
+            double sineWave = Math.Sin(totalMilliseconds / speedDivider);
+
+            _skeletonAlpha = (int)(20 + ((sineWave + 1) / 2) * 45);
+
+            if (searchResultsView.Visible) searchResultsView.Invalidate();
+        }
+
         private void SearchTextBox_TextChanged(object? sender, EventArgs e)
         {
-            // Reset the timer on every keystroke to restart the delay sequence
             _debounceTimer.Stop();
             _debounceTimer.Start();
         }
 
         private async void DebounceTimer_Tick(object? sender, EventArgs e)
         {
-            _debounceTimer.Stop(); // Halt the timer loops to begin processing
+            _debounceTimer.Stop();
             await ExecuteSearchQueryAsync();
+        }
+
+        private void ShowSkeletonLoaders()
+        {
+            _isLoading = true;
+            searchResultsView.Items.Clear();
+
+            for (int i = 0; i < 6; i++)
+            {
+                searchResultsView.Items.Add(new ListViewItem(string.Empty) { Tag = null });
+            }
+
+            PositionAndShowResults();
+            _skeletonTimer.Start();
+        }
+
+        private void PositionAndShowResults()
+        {
+            if (searchContainerPanel != null)
+            {
+                Form topLevelForm = this.FindForm() ?? Application.OpenForms[0]!;
+                Point globalScreenPoint = searchContainerPanel.Parent.PointToScreen(searchContainerPanel.Location);
+                Point formRelativePoint = topLevelForm.PointToClient(globalScreenPoint);
+
+                searchResultsView.Location = new Point(formRelativePoint.X, formRelativePoint.Y + searchContainerPanel.Height + 4);
+                searchResultsView.Width = searchContainerPanel.Width;
+                searchResultsView.Visible = true;
+                searchResultsView.BringToFront();
+            }
         }
 
         private async Task ExecuteSearchQueryAsync()
@@ -73,13 +121,19 @@ namespace Vibes.Views
             string query = searchTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
             {
+                _skeletonTimer.Stop();
                 searchResultsView.Visible = false;
                 return;
             }
 
+            ShowSkeletonLoaders();
+
             try
             {
                 var tracks = await _streamingService.SearchTracksAsync(query);
+
+                _skeletonTimer.Stop();
+                _isLoading = false;
                 searchResultsView.Items.Clear();
 
                 foreach (var track in tracks)
@@ -88,16 +142,9 @@ namespace Vibes.Views
                     searchResultsView.Items.Add(item);
                 }
 
-                if (searchResultsView.Items.Count > 0 && searchContainerPanel != null)
+                if (searchResultsView.Items.Count > 0)
                 {
-                    Form topLevelForm = this.FindForm() ?? Application.OpenForms[0]!;
-                    Point globalScreenPoint = searchContainerPanel.Parent.PointToScreen(searchContainerPanel.Location);
-                    Point formRelativePoint = topLevelForm.PointToClient(globalScreenPoint);
-
-                    searchResultsView.Location = new Point(formRelativePoint.X, formRelativePoint.Y + searchContainerPanel.Height + 4);
-                    searchResultsView.Width = searchContainerPanel.Width; // Match pill box width perfectly
-                    searchResultsView.Visible = true;
-                    searchResultsView.BringToFront();
+                    PositionAndShowResults();
                 }
                 else
                 {
@@ -106,6 +153,8 @@ namespace Vibes.Views
             }
             catch
             {
+                _skeletonTimer.Stop();
+                _isLoading = false;
                 searchResultsView.Visible = false;
             }
         }
@@ -115,7 +164,6 @@ namespace Vibes.Views
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            // Draw the background pill container shape matching the dark palette theme
             using (var bgBrush = new SolidBrush(Color.FromArgb(36, 36, 36)))
             using (var path = new GraphicsPath())
             {
@@ -123,28 +171,25 @@ namespace Vibes.Views
                 path.AddArc(0, 0, r, r, 90, 180);
                 path.AddArc(searchContainerPanel.Width - r - 1, 0, r, r, 270, 180);
                 path.CloseFigure();
-
                 g.FillPath(bgBrush, path);
             }
 
-            // Draw a high-quality vector search loop icon manually on the left edge
             using (var iconPen = new Pen(Color.FromArgb(180, 180, 180), 2f))
             {
                 int cx = 18;
                 int cy = searchContainerPanel.Height / 2 - 1;
                 int radius = 6;
-
                 g.DrawEllipse(iconPen, cx - radius, cy - radius, radius * 2, radius * 2);
                 g.DrawLine(iconPen, cx + 4, cy + 4, cx + 10, cy + 10);
             }
         }
 
-        private async void SearchResultsView_Click(object? sender, EventArgs e)
+        private void SearchResultsView_Click(object? sender, EventArgs e)
         {
-            if (searchResultsView.SelectedItems.Count == 0) return;
+            if (_isLoading || searchResultsView.SelectedItems.Count == 0) return;
 
             ListViewItem selectedItem = searchResultsView.SelectedItems[0];
-            Track selectedTrack = (Track)selectedItem.Tag!;
+            if (selectedItem.Tag is not Track selectedTrack) return;
 
             searchResultsView.Visible = false;
 
@@ -186,16 +231,45 @@ namespace Vibes.Views
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            if (e?.Item?.Tag == null || e.Item.Tag is not Track track)
+            Rectangle bounds = e.Bounds;
+
+            if (_isLoading || e?.Item?.Tag == null)
             {
-                e!.DrawDefault = true;
+                using (var bgBrush = new SolidBrush(Color.FromArgb(20, 20, 20)))
+                {
+                    g.FillRectangle(bgBrush, bounds);
+                }
+
+                int pad = 6;
+                int imgS = bounds.Height - (pad * 2);
+                var imgR = new Rectangle(bounds.X + pad, bounds.Y + pad, imgS, imgS);
+
+                using (var skeletonBrush = new SolidBrush(Color.FromArgb(_skeletonAlpha, 255, 255, 255)))
+                {
+                    using (var path = new GraphicsPath())
+                    {
+                        int radius = 4; int d = radius * 2;
+                        path.AddArc(imgR.X, imgR.Y, d, d, 180, 90);
+                        path.AddArc(imgR.Right - d, imgR.Y, d, d, 270, 90);
+                        path.AddArc(imgR.Right - d, imgR.Bottom - d, d, d, 0, 90);
+                        path.AddArc(imgR.X, imgR.Bottom - d, d, d, 90, 90);
+                        path.CloseFigure();
+                        g.FillPath(skeletonBrush, path);
+                    }
+
+                    int startX = imgR.Right + 12;
+
+                    g.FillRectangle(skeletonBrush, new Rectangle(startX, bounds.Y + 10, 180, 12));
+
+                    g.FillRectangle(skeletonBrush, new Rectangle(startX, bounds.Y + 28, 100, 9));
+                }
                 return;
             }
 
-            Rectangle bounds = e.Bounds;
+            if (e.Item.Tag is not Track track) return;
+
             bool isSelected = e.Item.Selected;
             bool isHovered = searchResultsView.IsRowHovered(e.ItemIndex);
-
             Color rowColor = (isSelected || isHovered) ? Color.FromArgb(45, 45, 45) : Color.FromArgb(20, 20, 20);
 
             using (var bgBrush = new SolidBrush(rowColor))
@@ -211,8 +285,7 @@ namespace Vibes.Views
             {
                 using (var path = new GraphicsPath())
                 {
-                    int radius = 4;
-                    int d = radius * 2;
+                    int radius = 4; int d = radius * 2;
                     path.AddArc(imgRect.X, imgRect.Y, d, d, 180, 90);
                     path.AddArc(imgRect.Right - d, imgRect.Y, d, d, 270, 90);
                     path.AddArc(imgRect.Right - d, imgRect.Bottom - d, d, d, 0, 90);

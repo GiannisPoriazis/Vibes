@@ -41,11 +41,19 @@ namespace Vibes.Extensions
 
             if (!string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(clientId))
             {
+                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string webViewCachePath = Path.Combine(appDataPath, "Vibes", "WebView2_Cache");
+                Directory.CreateDirectory(webViewCachePath);
+
+                var customBrowser = new AuthBrowser(webViewCachePath);
+
                 var options = new Auth0ClientOptions
                 {
                     Domain = domain,
-                    ClientId = clientId
+                    ClientId = clientId,
+                    Browser = customBrowser 
                 };
+
                 services.AddSingleton(options);
                 services.AddSingleton<IAuth0Service, Auth0Service>();
             }

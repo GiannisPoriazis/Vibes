@@ -99,7 +99,7 @@ namespace Vibes
             mainGrid.RowCount = 3;
             mainGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));
             mainGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            mainGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 50F));
+            mainGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 100F));
             mainGrid.Size = new Size(1898, 1022);
             mainGrid.TabIndex = 0;
             // 
@@ -255,13 +255,13 @@ namespace Vibes
             homeButton.IconColor = Color.White;
             homeButton.IconFont = IconFont.Auto;
             homeButton.IconSize = 22;
-            homeButton.Location = new Point(1592, 0);
+            homeButton.Location = new Point(360, 0);
             homeButton.Margin = new Padding(0);
             homeButton.Name = "homeButton";
             homeButton.Size = new Size(50, 44);
             homeButton.TabIndex = 3;
-            homeButton.Visible = false;
             homeButton.UseVisualStyleBackColor = false;
+            homeButton.Visible = false;
             homeButton.Click += HomeButton_Click;
             homeButton.Paint += HomeButton_Paint;
             // 
@@ -282,11 +282,12 @@ namespace Vibes
             // 
             // copyrightLabel
             // 
+            copyrightLabel.Anchor = AnchorStyles.Bottom;
             copyrightLabel.AutoSize = true;
-            copyrightLabel.Dock = DockStyle.Fill;
             copyrightLabel.ForeColor = Color.White;
             copyrightLabel.Location = new Point(3, 548);
             copyrightLabel.Name = "copyrightLabel";
+            copyrightLabel.Padding = new Padding(0, 0, 0, 20);
             copyrightLabel.Size = new Size(892, 50);
             copyrightLabel.TabIndex = 1;
             copyrightLabel.TextAlign = ContentAlignment.MiddleCenter;

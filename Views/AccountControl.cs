@@ -7,7 +7,8 @@ namespace Vibes.Views
         private readonly IAuth0Service? _authService;
         private readonly IAvatarService? _avatarService;
 
-        public event EventHandler? Logout; 
+        public event EventHandler? Logout;
+        public event EventHandler? BackBtnPressed;
 
         public AccountControl()
         {
@@ -38,7 +39,7 @@ namespace Vibes.Views
 
         private void BtnBack_Click(object? sender, EventArgs e)
         {
-            // Pending implementation: Will handle navigation to homepage
+            BackBtnPressed?.Invoke(this, new EventArgs());
         }
 
         private async void BtnLogout_Click(object? sender, EventArgs e)

@@ -50,6 +50,7 @@ namespace Vibes
             _appControl.PlaylistSelected += NavigateToTrackPage;
             _homeControl.EntitySelected += NavigateToTrackPage;
             _accountControl.Logout += UserLogout;
+            _accountControl.BackBtnPressed += HomeButton_Click;
 
             InitializeComponent();
 

@@ -74,6 +74,7 @@ namespace Vibes.Services
                 if (!string.IsNullOrEmpty(_currentTrack.StreamUrl) && _audioPlayer != null)
                 {
                     await _audioPlayer.PlayStreamAsync(_currentTrack.StreamUrl);
+                    _audioPlayer.UpdateCurrentTrackDisplay(_currentTrack);
                 }
             }
             finally
@@ -100,6 +101,7 @@ namespace Vibes.Services
                 if (!string.IsNullOrEmpty(_currentTrack.StreamUrl) && _audioPlayer != null)
                 {
                     await _audioPlayer.PlayStreamAsync(_currentTrack.StreamUrl);
+                    _audioPlayer.UpdateCurrentTrackDisplay(_currentTrack);
                 }
             }
             finally
