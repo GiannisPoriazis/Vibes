@@ -19,10 +19,16 @@
     <Compile Update="Views\ApplicationControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="Views\ApplicationControl.Drawing.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="Views\AudioPlayerControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Update="Views\AudioVolumeSlider.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="Views\AudioVolumeSlider.Drawing.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Update="Views\HomeControl.cs">
@@ -35,6 +41,9 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Update="Views\MediaDisplayControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Views\MediaDisplayControl.Drawing.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Update="Views\MusicCardControl.cs">

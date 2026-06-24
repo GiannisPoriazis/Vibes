@@ -37,12 +37,12 @@ namespace Vibes.Views
             _fallbackCoverImage = CreateDefaultCollectionPlaceholder(48, 48);
 
             playlistView.Columns.Add("LibraryItems", 150);
-            playlistView.Columns.Add("Actions", 40); 
-            playlistView.SetRowItemHeight(64); 
+            playlistView.Columns.Add("Actions", 40);
+            playlistView.SetRowItemHeight(64);
             playlistView.EnableRowHoverStyles();
             playlistView.DrawSubItem += PlaylistView_DrawSubItem;
             playlistView.Resize += playlistView_Resize;
-            playlistView.MouseClick += PlaylistView_MouseClick; 
+            playlistView.MouseClick += PlaylistView_MouseClick;
 
             HandleCreated += (s, e) => LoadPlaylists();
             SetupContextMenu();
@@ -65,7 +65,7 @@ namespace Vibes.Views
                 foreach (var playlist in playlists)
                 {
                     ListViewItem item = new ListViewItem(playlist.Name) { Tag = playlist };
-                    item.SubItems.Add(string.Empty); 
+                    item.SubItems.Add(string.Empty);
                     playlistView.Items.Add(item);
                 }
             }
@@ -80,7 +80,7 @@ namespace Vibes.Views
                 BackColor = ColorPalette.CardBackground,
                 ForeColor = Color.White,
                 Renderer = new ContextMenuThemeRenderer(),
-                ShowImageMargin = false 
+                ShowImageMargin = false
             };
 
             ToolStripMenuItem playItem = new ToolStripMenuItem("Play");
@@ -93,90 +93,6 @@ namespace Vibes.Views
 
             playlistContextMenu.Items.AddRange(new ToolStripItem[] { playItem, renameItem, deleteItem });
             playlistView.ContextMenuStrip = playlistContextMenu;
-        }
-
-        private void PlaylistView_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
-        {
-            var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-
-            if (e.Item?.Tag is not Playlist playlist) return;
-
-            bool isSelected = e.Item.Selected;
-            bool isHovered = playlistView.IsRowHovered(e.ItemIndex);
-
-            Color bg = Color.FromArgb(18, 18, 18);
-            if (isSelected) bg = Color.FromArgb(40, 40, 40);
-            else if (isHovered) bg = Color.FromArgb(28, 28, 28);
-
-            using (var bgBrush = new SolidBrush(bg))
-            {
-                g.FillRectangle(bgBrush, e.Bounds);
-            }
-
-            if (e.ColumnIndex == 1)
-            {
-                if (isHovered || isSelected)
-                {
-                    string ellipsis = "•••";
-                    Font boldFont = new Font("Segoe UI", 10, FontStyle.Bold);
-                    TextRenderer.DrawText(g, ellipsis, boldFont, e.Bounds, Color.FromArgb(200, 200, 200),
-                        TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter);
-                }
-                return; 
-            }
-
-            if (e.ColumnIndex == 0)
-            {
-                Image coverArt = _fallbackCoverImage;
-
-                if (playlist.CachedCover == null)
-                {
-                    playlist.CachedCover = (Bitmap)CreateDefaultCollectionPlaceholder(124, 124);
-                }
-
-                if (playlist.Tracks != null && playlist.Tracks.Count > 0)
-                {
-                    var firstTrack = playlist.Tracks.First();
-
-                    if (firstTrack.CachedCover != null)
-                    {
-                        coverArt = firstTrack.CachedCover;
-                    }
-                    else if (_sidebarTrackImageCache.TryGetValue(firstTrack.Id, out var cachedImage))
-                    {
-                        coverArt = cachedImage;
-                    }
-                    else if (!string.IsNullOrEmpty(firstTrack.CoverUrl))
-                    {
-                        TriggerSidebarThumbnailDownloadAsync(firstTrack.Id, firstTrack.CoverUrl, e.ItemIndex);
-                    }
-                }
-
-                int imgSize = 48;
-                int margin = 8;
-                int imgX = e.Bounds.Left + margin;
-                int imgY = e.Bounds.Top + ((e.Bounds.Height - imgSize) / 2);
-                g.DrawImage(coverArt, new Rectangle(imgX, imgY, imgSize, imgSize));
-
-                int textX = imgX + imgSize + 12;
-
-                string titleText = playlist.Name;
-                Font titleFont = new Font("Segoe UI", 10, isSelected ? FontStyle.Bold : FontStyle.Regular);
-                Color titleColor = isSelected || isHovered ? Color.White : Color.FromArgb(220, 220, 220);
-                Size titleSize = TextRenderer.MeasureText(titleText, titleFont);
-                int titleY = e.Bounds.Top + (e.Bounds.Height / 2) - titleSize.Height + 2;
-                TextRenderer.DrawText(g, titleText, titleFont, new Point(textX, titleY), titleColor, TextFormatFlags.NoPadding);
-
-                string owner = _authService?.CurrentUser?.Username ?? "You";
-                int trackCount = playlist.Tracks?.Count ?? 0;
-                string subtitleText = $"Playlist • {owner} • {trackCount} tracks";
-
-                Font subFont = new Font("Segoe UI", 9, FontStyle.Regular);
-                Color subColor = Color.FromArgb(160, 160, 160);
-                int subtitleY = e.Bounds.Top + (e.Bounds.Height / 2) + 2;
-                TextRenderer.DrawText(g, subtitleText, subFont, new Point(textX, subtitleY), subColor, TextFormatFlags.NoPadding);
-            }
         }
 
         private void PlaylistView_MouseClick(object? sender, MouseEventArgs e)
@@ -245,7 +161,7 @@ namespace Vibes.Views
                     }));
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
             }
@@ -257,10 +173,7 @@ namespace Vibes.Views
 
         private void MenuPlay_Click(object? sender, EventArgs e)
         {
-            if (playlistView.SelectedItems.Count == 0)
-            {
-                return;
-            }
+            if (playlistView.SelectedItems.Count == 0) return;
 
             if (playlistView.SelectedItems[0].Tag is Playlist playlist)
             {
@@ -321,17 +234,15 @@ namespace Vibes.Views
             if (string.IsNullOrEmpty(_authService?.CurrentUser?.Subject)) return;
 
             string playlistName = Microsoft.VisualBasic.Interaction.InputBox(
-                "Enter new playlist name:",
-                "Create Playlist",
-                "New Playlist"
-            ).Trim();
+                "Enter new playlist name:", "Create Playlist", "New Playlist").Trim();
 
             if (string.IsNullOrEmpty(playlistName)) return;
 
             using (var context = new Database.VibesDbContext())
             {
-                var newPlaylist = new Playlist { 
-                    Name = playlistName, 
+                var newPlaylist = new Playlist
+                {
+                    Name = playlistName,
                     UserId = _authService.CurrentUser.Subject,
                 };
 
@@ -347,30 +258,9 @@ namespace Vibes.Views
             if (playlistView.Columns.Count > 1)
             {
                 int workingWidth = playlistView.ClientSize.Width;
-
                 playlistView.Columns[1].Width = 40;
                 playlistView.Columns[0].Width = Math.Max(100, workingWidth - 40);
             }
-        }
-
-        private Image CreateDefaultCollectionPlaceholder(int width, int height)
-        {
-            Bitmap bmp = new Bitmap(width, height);
-            using (Graphics g = Graphics.FromImage(bmp))
-            {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-
-                using (LinearGradientBrush lgb = new LinearGradientBrush(new Point(0, 0), new Point(width, height),
-                    Color.FromArgb(70, 40, 180), Color.FromArgb(140, 120, 240)))
-                {
-                    g.FillRectangle(lgb, 0, 0, width, height);
-                }
-
-                Font iconFont = new Font("Segoe UI", 16, FontStyle.Bold);
-                TextRenderer.DrawText(g, "🎵", iconFont, new Rectangle(0, 0, width, height), Color.White,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-            }
-            return bmp;
         }
     }
 }

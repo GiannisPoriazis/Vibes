@@ -84,24 +84,9 @@ namespace Vibes.Views
             var colOptions = new ColumnHeader { Text = "", Width = 40 };
             trackListView.Columns.AddRange(new ColumnHeader[] { colNum, colTitle, colAlbum, colType, colDuration, colOptions });
 
-            trackListView.SetRowItemHeight(56); 
+            trackListView.SetRowItemHeight(56);
 
-            trackListView.DrawColumnHeader += (s, e) => {
-                using (var headerBrush = new SolidBrush(Color.FromArgb(25, 25, 25)))
-                {
-                    e.Graphics.FillRectangle(headerBrush, e.Bounds);
-                }
-
-                TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.Left;
-
-                if (e.ColumnIndex == 0)
-                {
-                    flags = TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter;
-                }
-
-                TextRenderer.DrawText(e.Graphics, e.Header!.Text, e.Font, e.Bounds, Color.Gray, flags);
-            };
-
+            trackListView.DrawColumnHeader += TrackListView_DrawColumnHeader;
             trackListView.DrawSubItem += TrackListView_DrawSubItem;
             trackListView.Resize += TrackListView_Resize;
             trackListView.ColumnWidthChanging += TrackListView_ColumnWidthChanging;
@@ -129,7 +114,6 @@ namespace Vibes.Views
             if (totalWidth < 300) return;
 
             trackListView.BeginUpdate();
-
             trackListView.Columns[0].Width = (int)(totalWidth * indexWidth);
             trackListView.Columns[2].Width = (int)(totalWidth * albumWidth);
             trackListView.Columns[3].Width = (int)(totalWidth * typeWidth);
@@ -137,12 +121,7 @@ namespace Vibes.Views
             trackListView.Columns[5].Width = (int)(totalWidth * optionsWidth);
 
             int workingWidth = trackListView.ClientSize.Width;
-            int fixedColumnsWidth =
-                                    trackListView.Columns[0].Width +
-                                    trackListView.Columns[2].Width +
-                                    trackListView.Columns[3].Width +
-                                    trackListView.Columns[4].Width +
-                                    trackListView.Columns[5].Width;
+            int fixedColumnsWidth = trackListView.Columns[0].Width + trackListView.Columns[2].Width + trackListView.Columns[3].Width + trackListView.Columns[4].Width + trackListView.Columns[5].Width;
 
             trackListView.Columns[1].Width = Math.Max(200, workingWidth - fixedColumnsWidth);
             trackListView.EndUpdate();
@@ -150,21 +129,14 @@ namespace Vibes.Views
 
         public void AutoplayTracks()
         {
-            if (Entity is Playlist playlist)
-            {
-                _queueService.PlayPlaylist(playlist.Tracks);
-            }
-            else if (Entity is Track track)
-            {
-                _queueService.PlaySearchTrackNow(track);
-            }
+            if (Entity is Playlist playlist) _queueService.PlayPlaylist(playlist.Tracks);
+            else if (Entity is Track track) _queueService.PlaySearchTrackNow(track);
         }
 
         public void RenderContentContext(string mainHeaderTitle, string metadataString, IEnumerable<Track> tracksToLoad)
         {
             lblMediaTitle.Text = mainHeaderTitle;
             lblMetaDetails.Text = metadataString;
-
             trackListView.Items.Clear();
 
             if (Entity is Playlist playlist)
@@ -174,7 +146,7 @@ namespace Vibes.Views
                 headerColorPanel.BackColor = derivedAccent;
                 masterLayout.BackColor = derivedAccent;
             }
-            else if(Entity is Track track)
+            else if (Entity is Track track)
             {
                 pbCoverArt.Image = track.CachedCover;
                 Color derivedAccent = ExtractDominantColor(track.CachedCover!);
@@ -186,93 +158,20 @@ namespace Vibes.Views
 
             for (int i = 0; i < tracksToLoad.Count(); i++)
             {
-                var track = tracksToLoad.ElementAt(i);
-                ListViewItem rowItem = new ListViewItem((i + 1).ToString()) { Tag = track };
-                rowItem.SubItems.Add(track.Title);
-                rowItem.SubItems.Add(track.Album);
-                rowItem.SubItems.Add(track.Type.ToString());
-                rowItem.SubItems.Add(track.FormattedDuration);
+                var currentTrack = tracksToLoad.ElementAt(i);
+                ListViewItem rowItem = new ListViewItem((i + 1).ToString()) { Tag = currentTrack };
+                rowItem.SubItems.Add(currentTrack.Title);
+                rowItem.SubItems.Add(currentTrack.Album);
+                rowItem.SubItems.Add(currentTrack.Type.ToString());
+                rowItem.SubItems.Add(currentTrack.FormattedDuration);
                 rowItem.SubItems.Add(string.Empty);
 
                 trackListView.Items.Add(rowItem);
             }
 
             int workingWidth = trackListView.ClientSize.Width;
-            int fixedColumnsWidth =
-                                    trackListView.Columns[0].Width +
-                                    trackListView.Columns[2].Width +
-                                    trackListView.Columns[3].Width +
-                                    trackListView.Columns[4].Width +
-                                    trackListView.Columns[5].Width;
-
+            int fixedColumnsWidth = trackListView.Columns[0].Width + trackListView.Columns[2].Width + trackListView.Columns[3].Width + trackListView.Columns[4].Width + trackListView.Columns[5].Width;
             trackListView.Columns[1].Width = Math.Max(200, workingWidth - fixedColumnsWidth);
-        }
-
-        private void TrackListView_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
-        {
-            if (e.Item == null) return;
-
-            var g = e.Graphics;
-            var track = (Track)e.Item.Tag!;
-            bool isSelected = e.Item.Selected;
-            bool isHovered = trackListView.IsRowHovered(e.ItemIndex);
-
-            // Paint background row highlights
-            Color rowColor = (isSelected || isHovered) ? Color.FromArgb(255, 45, 45, 45) : Color.FromArgb(255, 15, 15, 15);
-            using (var rowBrush = new SolidBrush(rowColor))
-            {
-                g.FillRectangle(rowBrush, e.Bounds);
-            }
-
-            if (e.ColumnIndex == 0)
-            {
-                TextRenderer.DrawText(g, e.SubItem!.Text, e.Item.Font, e.Bounds, Color.Gray,
-                    TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter);
-                return;
-            }
-
-            // Options menu rendering route
-            if (e.ColumnIndex == 5)
-            {
-                if (isHovered || isSelected)
-                {
-                    string ellipsis = "•••";
-                    Font boldFont = new Font("Segoe UI", 10, FontStyle.Bold);
-                    TextRenderer.DrawText(g, ellipsis, boldFont, e.Bounds, Color.FromArgb(200, 200, 200),
-                        TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter);
-                }
-                return;
-            }
-
-            // Custom Stacked Text Rules for Column Index 1 (Title + Artist)
-            if (e.ColumnIndex == 1)
-            {
-                bool isCurrentTrack = (_queueService.CurrentTrack == track);
-                Color titleColor = isCurrentTrack ? Color.FromArgb(30, 215, 96) : Color.White;
-                Color artistColor = Color.FromArgb(170, 170, 170);
-
-                Font titleFont = new Font("Segoe UI", 10, FontStyle.Regular);
-                Font artistFont = new Font("Segoe UI", 9, FontStyle.Regular);
-
-                // Calculate layout spacing metrics safely centered inside custom 56px row limits
-                Size titleSize = TextRenderer.MeasureText(track.Title, titleFont);
-                int startY = e.Bounds.Top + (e.Bounds.Height - titleSize.Height - 14) / 2;
-
-                // Draw Track Title string line
-                Point titlePoint = new Point(e.Bounds.Left + 4, startY);
-                TextRenderer.DrawText(g, track.Title, titleFont, titlePoint, titleColor, TextFormatFlags.NoPadding);
-
-                // Draw Artist subtext string line right beneath it
-                Point artistPoint = new Point(e.Bounds.Left + 4, titlePoint.Y + titleSize.Height + 2);
-                TextRenderer.DrawText(g, track.Artist, artistFont, artistPoint, artistColor, TextFormatFlags.NoPadding);
-                return;
-            }
-
-            // Standard cell properties mapping logic
-            Color textColor = Color.White;
-            if (e.ColumnIndex == 0 || e.ColumnIndex == 2) textColor = Color.Gray;
-
-            TextRenderer.DrawText(g, e.SubItem!.Text, e.Item.Font, e.Bounds, textColor, TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
         }
 
         private void Play_List(object? sender, EventArgs e)
@@ -280,7 +179,6 @@ namespace Vibes.Views
             if (trackListView.SelectedItems.Count == 0) return;
 
             var selectedRow = trackListView.SelectedItems[0];
-            var clickedTrack = (Track)selectedRow.Tag!;
             int startingIndex = selectedRow.Index;
 
             var fullContextList = new List<Track>();
@@ -290,32 +188,6 @@ namespace Vibes.Views
             }
 
             _queueService.PlayPlaylist(fullContextList, startingIndex);
-        }
-
-        private Color ExtractDominantColor(Bitmap bmp)
-        {
-            using (Bitmap lowRes = new Bitmap(bmp, new Size(16, 16)))
-            {
-                long r = 0, g = 0, b = 0;
-                int totalPixels = lowRes.Width * lowRes.Height;
-
-                for (int x = 0; x < lowRes.Width; x++)
-                {
-                    for (int y = 0; y < lowRes.Height; y++)
-                    {
-                        Color c = lowRes.GetPixel(x, y);
-                        r += c.R;
-                        g += c.G;
-                        b += c.B;
-                    }
-                }
-
-                int finalR = (int)((r / totalPixels) * 0.4);
-                int finalG = (int)((g / totalPixels) * 0.4);
-                int finalB = (int)((b / totalPixels) * 0.4);
-
-                return Color.FromArgb(255, Math.Max(15, finalR), Math.Max(15, finalG), Math.Max(15, finalB));
-            }
         }
 
         private void TrackListView_MouseClick(object? sender, MouseEventArgs e)
@@ -331,63 +203,6 @@ namespace Vibes.Views
                 bool isPlaylistView = (Entity is Playlist);
                 ShowTrackContextMenu(track, e.Location, isPlaylistView);
             }
-        }
-
-        private async void ShowTrackContextMenu(Track track, Point displayLocation, bool isPlaylistView)
-        {
-            var menu = new ContextMenuStrip
-            {
-                BackColor = Color.FromArgb(35, 35, 35),
-                ForeColor = Color.White,
-                ShowImageMargin = false,
-                Renderer = new ContextMenuThemeRenderer()
-            };
-
-            var itemPlay = new ToolStripMenuItem("Play");
-            itemPlay.Click += (s, e) => _queueService.PlaySearchTrackNow(track);
-            menu.Items.Add(itemPlay);
-
-            var itemQueue = new ToolStripMenuItem("Add to queue");
-            itemQueue.Click += (s, e) => {
-                _queueService.AppendToFutureQueue(track);
-            };
-            menu.Items.Add(itemQueue);
-
-            IEnumerable<Playlist> availablePlaylists;
-            using (var db = new VibesDbContext())
-            {
-                availablePlaylists = await _playlistService.GetPlaylistsWithoutTrackAsync(track.Id);
-            }
-
-            if (availablePlaylists.Any())
-            {
-                var itemAddToPlaylist = new ToolStripMenuItem("Add to playlist");
-                ((ToolStripDropDownMenu)itemAddToPlaylist.DropDown).ShowImageMargin = false;
-
-                foreach (var playlist in availablePlaylists)
-                {
-                    var subItem = new ToolStripMenuItem(playlist.Name);
-                    subItem.Click += async (s, e) => {
-                        await _playlistService.AddTrackToPlaylistAsync(playlist.Id, track);
-                    };
-                    itemAddToPlaylist.DropDownItems.Add(subItem);
-                }
-
-                menu.Items.Add(itemAddToPlaylist);
-            }
-
-            if (isPlaylistView)
-            {
-                menu.Items.Add(new ToolStripSeparator());
-                var itemRemove = new ToolStripMenuItem("Remove from this playlist");
-                itemRemove.ForeColor = Color.FromArgb(255, 100, 100);
-                itemRemove.Click += async (s, e) => {
-                    await _playlistService.RemoveTrackFromPlaylistAsync(Entity.Id, track.Id);
-                };
-                menu.Items.Add(itemRemove);
-            }
-
-            menu.Show(trackListView, displayLocation);
         }
     }
 }

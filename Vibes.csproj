@@ -61,6 +61,27 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Update="Views\MediaDisplayControl.Drawing.cs">
+			<DependentUpon>Views\MediaDisplayControl.cs</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Views\ApplicationControl.Drawing.cs">
+			<DependentUpon>Views\ApplicationControl.cs</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Views\AudioVolumeSlider.Drawing.cs">
+			<DependentUpon>Views\AudioVolumeSlider.cs</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Update="Views\MusicCardSkeleton.Drawing.cs">
 			<DependentUpon>Views\MusicCardSkeleton.cs</DependentUpon>
 			<SubType>Code</SubType>
