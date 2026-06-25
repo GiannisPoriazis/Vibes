@@ -1,4 +1,7 @@
-﻿# Vibes – Modern Music Streaming Client (Windows Desktop)
+[![.NET Version](https://img.shields.io/badge/.NET-10.0--windows-blueviolet?style=flat-for-the-badge&logo=.net)](https://dotnet.microsoft.com/en-us/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20Desktop-blue?style=flat-for-the-badge&logo=windows)](https://www.microsoft.com/windows)
+ 
+ # Vibes – Modern Music Streaming Client (Windows Desktop)
 
 Vibes is a high-performance Windows desktop audio streaming client built using **C#** and **WinForms (.NET 10)**. This application was developed as a **Portfolio Project** to demonstrate advanced native UI rendering, reactive programming, desktop state management, and production-grade software architecture.
 
